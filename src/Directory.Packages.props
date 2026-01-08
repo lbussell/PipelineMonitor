@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- This file contains all package versions used by all projects.
+    If packages are used in multiple projects, this ensures that they all use
+    the same version. See the NuGet CPM documentation for more details:
+    https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="MSTest" Version="4.0.1" />
+  </ItemGroup>
+
+</Project>
