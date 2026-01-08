@@ -39,8 +39,8 @@
     <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
 
-    <!-- Build date in format YYYY.MM.DD -->
-    <BuildDate>$([System.DateTime]::Now.ToString("yyyy.MM.dd"))</BuildDate>
+    <!-- Build date in format YYYY.M.D (no leading zeros for SemVer compliance) -->
+    <BuildDate>$([System.DateTime]::Now.ToString("yyyy.M.d"))</BuildDate>
 
     <!-- Pre-release versioning label -->
     <!-- This should stay the same throughout a given release cycle, or
