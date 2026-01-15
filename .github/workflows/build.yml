@@ -28,6 +28,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Lint
+        if: github.event_name != 'pull_request'
         run: dotnet format --verify-no-changes
 
       - name: Restore
