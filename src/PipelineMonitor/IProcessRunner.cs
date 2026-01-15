@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-namespace PipelineMonitor.AzureDevOps;
+namespace PipelineMonitor;
 
 /// <summary>
 /// Abstraction for running processes and capturing output.

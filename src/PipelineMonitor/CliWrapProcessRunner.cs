@@ -7,7 +7,7 @@ using CliWrap.Buffered;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace PipelineMonitor.AzureDevOps;
+namespace PipelineMonitor;
 
 /// <summary>
 /// Implementation of <see cref="IProcessRunner"/> using CliWrap.
@@ -22,7 +22,7 @@ internal sealed class CliWrapProcessRunner : IProcessRunner
     {
         var result = await Cli.Wrap(executable)
             .WithArguments(arguments)
-            .WithValidation(CommandResultValidation.None)
+            .WithValidation(CommandResultValidation.None) // Allow non-zero exit codes
             .ExecuteBufferedAsync(Encoding.UTF8, Encoding.UTF8, cancellationToken);
 
         return new ProcessResult(
