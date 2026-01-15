@@ -235,11 +235,11 @@ internal sealed partial class VstsGitUrlParser(
 
         // Try old SSH URL format with _ssh path segment
         var httpsUrl = $"https://{netloc}/{path.TrimStart('/')}";
-        var sshMatch = SshPathSegmentRegex().Match(httpsUrl);
-        if (sshMatch.Success)
+        
+        // Replace _ssh with _git if present
+        if (httpsUrl.Contains("_ssh/", StringComparison.OrdinalIgnoreCase))
         {
-            // Replace _ssh with _git
-            httpsUrl = SshPathSegmentRegex().Replace(httpsUrl, "_git/");
+            httpsUrl = SshPathSegmentRegex().Replace(httpsUrl, "_git/", 1);
         }
         
         return httpsUrl;
@@ -272,8 +272,8 @@ internal sealed partial class VstsGitUrlParser(
         var match = SshNetlocRegex().Match($"{userInfo}@{host}");
         if (match.Success)
         {
-            var user = match.Groups[1].Value;
-            var domain = match.Groups[2].Value;
+            var user = match.Groups["user"].Value;
+            var domain = match.Groups["domain"].Value;
             return $"{user}{domain}";
         }
 
@@ -311,7 +311,7 @@ internal sealed partial class VstsGitUrlParser(
     }
 
     // Regex to match SSH netloc: user@vs-ssh.domain
-    [GeneratedRegex(@"([^@]+)@[^\.]+(\.[^:]+)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?<user>[^@]+)@[^\.]+(?<domain>\.[^:]+)", RegexOptions.IgnoreCase)]
     private static partial Regex SshNetlocRegex();
 
     // Regex to match dev.azure.com URL path: /{org}/{project}/_git/{repo}
