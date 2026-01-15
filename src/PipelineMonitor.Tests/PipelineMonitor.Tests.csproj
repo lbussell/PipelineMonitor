@@ -5,7 +5,12 @@
 
   <!-- Package versions are managed centrally in ../Directory.Packages.props. -->
   <ItemGroup>
+    <PackageReference Include="Moq" />
     <PackageReference Include="MSTest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../PipelineMonitor/PipelineMonitor.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Global usings">

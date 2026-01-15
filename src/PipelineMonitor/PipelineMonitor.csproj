@@ -76,4 +76,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="CliWrap" />
+  </ItemGroup>
+
 </Project>
