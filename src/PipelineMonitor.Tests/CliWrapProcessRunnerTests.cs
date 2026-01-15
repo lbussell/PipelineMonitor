@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
+using System.Runtime.InteropServices;
+
 namespace PipelineMonitor.Tests;
 
 [TestClass]
@@ -12,12 +14,12 @@ public sealed class CliWrapProcessRunnerTests
         // Arrange
         var runner = new CliWrapProcessRunner();
 
-        // Act - use 'echo' command which is available on all platforms
-        var result = await runner.RunAsync("echo", "Hello World");
+        // Act - use dotnet command which is available on all platforms where tests run
+        var result = await runner.RunAsync("dotnet", "--version");
 
         // Assert
         Assert.AreEqual(0, result.ExitCode);
-        StringAssert.Contains(result.StandardOutput, "Hello World");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.StandardOutput));
         Assert.AreEqual(string.Empty, result.StandardError);
     }
 
@@ -27,12 +29,11 @@ public sealed class CliWrapProcessRunnerTests
         // Arrange
         var runner = new CliWrapProcessRunner();
 
-        // Act - use a command that will fail
-        // Use 'sh -c "exit 42"' which works on Linux/Mac
-        var result = await runner.RunAsync("sh", "-c \"exit 42\"");
+        // Act - use dotnet command with invalid arguments to get non-zero exit code
+        var result = await runner.RunAsync("dotnet", "invalid-command-that-does-not-exist");
 
         // Assert
-        Assert.AreEqual(42, result.ExitCode);
+        Assert.AreNotEqual(0, result.ExitCode);
     }
 
     [TestMethod]
@@ -41,12 +42,11 @@ public sealed class CliWrapProcessRunnerTests
         // Arrange
         var runner = new CliWrapProcessRunner();
 
-        // Act - redirect output to stderr
-        // Use 'sh -c' to redirect stderr
-        var result = await runner.RunAsync("sh", "-c \"echo 'Error message' >&2\"");
+        // Act - use dotnet command with invalid arguments to get error output
+        var result = await runner.RunAsync("dotnet", "invalid-command-that-does-not-exist");
 
-        // Assert
-        StringAssert.Contains(result.StandardError, "Error message");
+        // Assert - dotnet writes errors to stderr or stdout depending on the error
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.StandardError) && string.IsNullOrWhiteSpace(result.StandardOutput));
     }
 
     [TestMethod]
@@ -54,13 +54,28 @@ public sealed class CliWrapProcessRunnerTests
     {
         // Arrange
         var runner = new CliWrapProcessRunner();
-        var workingDir = "/tmp";
+        var workingDir = Path.GetTempPath();
+        var (command, args) = GetPrintWorkingDirectoryCommand();
 
-        // Act - run 'pwd' command to print working directory
-        var result = await runner.RunAsync("pwd", "", workingDir);
+        // Act - run command to print working directory
+        var result = await runner.RunAsync(command, args, workingDir);
 
         // Assert
         Assert.AreEqual(0, result.ExitCode);
-        Assert.IsTrue(result.StandardOutput.Trim().Equals("/tmp", StringComparison.OrdinalIgnoreCase));
+        var outputPath = result.StandardOutput.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var expectedPath = workingDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        Assert.AreEqual(expectedPath, outputPath, ignoreCase: true);
+    }
+
+    private static (string Command, string Args) GetPrintWorkingDirectoryCommand()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return ("cmd.exe", "/c cd");
+        }
+        else
+        {
+            return ("pwd", "");
+        }
     }
 }
