@@ -28,10 +28,20 @@ public partial class BuildStatusParser
             return null;
         }
 
+        if (!int.TryParse(match.Groups["buildId"].Value, out var buildId))
+        {
+            return null;
+        }
+
+        if (!TimeSpan.TryParse(match.Groups["duration"].Value, out var duration))
+        {
+            return null;
+        }
+
         return new BuildStatusInfo(
-            int.Parse(match.Groups["buildId"].Value),
+            buildId,
             match.Groups["status"].Value,
-            TimeSpan.Parse(match.Groups["duration"].Value)
+            duration
         );
     }
 }

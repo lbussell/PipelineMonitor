@@ -28,10 +28,15 @@ public partial class PipelineUrlParser
             return null;
         }
 
+        if (!int.TryParse(match.Groups["buildId"].Value, out var buildId))
+        {
+            return null;
+        }
+
         return new PipelineUrlInfo(
             match.Groups["organization"].Value,
             match.Groups["project"].Value,
-            int.Parse(match.Groups["buildId"].Value)
+            buildId
         );
     }
 }

@@ -79,4 +79,17 @@ public class BuildStatusParserTests
         // Assert
         Assert.IsNull(result);
     }
+
+    [TestMethod]
+    public void Parse_InvalidDuration_ReturnsNull()
+    {
+        // Arrange - invalid time format
+        var message = "Build 12345 completed: Succeeded (Duration: 99:99:99)";
+
+        // Act
+        var result = PipelineMonitor.AzureDevOps.BuildStatusParser.Parse(message);
+
+        // Assert
+        Assert.IsNull(result);
+    }
 }

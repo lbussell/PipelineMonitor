@@ -28,10 +28,15 @@ public partial class TaskResultParser
             return null;
         }
 
+        if (!int.TryParse(match.Groups["exitCode"].Value, out var exitCode))
+        {
+            return null;
+        }
+
         return new TaskResult(
             match.Groups["taskName"].Value,
             match.Groups["result"].Value,
-            int.Parse(match.Groups["exitCode"].Value)
+            exitCode
         );
     }
 }

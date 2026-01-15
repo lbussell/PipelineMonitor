@@ -93,4 +93,17 @@ public class PipelineLogParserTests
         // Assert
         Assert.IsNull(result);
     }
+
+    [TestMethod]
+    public void Parse_InvalidTimestamp_ReturnsNull()
+    {
+        // Arrange - invalid date like Feb 30
+        var logLine = "2024-02-30T10:30:45.1234567Z [INFO] Invalid date";
+
+        // Act
+        var result = PipelineMonitor.AzureDevOps.PipelineLogParser.Parse(logLine);
+
+        // Assert
+        Assert.IsNull(result);
+    }
 }

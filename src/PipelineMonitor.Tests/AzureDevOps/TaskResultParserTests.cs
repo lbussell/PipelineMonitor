@@ -95,4 +95,17 @@ public class TaskResultParserTests
         // Assert
         Assert.IsNull(result);
     }
+
+    [TestMethod]
+    public void Parse_ExitCodeOverflow_ReturnsNull()
+    {
+        // Arrange - exit code larger than int.MaxValue
+        var message = "Task 'Test' completed with result: Failed (Exit code: 999999999999999999)";
+
+        // Act
+        var result = PipelineMonitor.AzureDevOps.TaskResultParser.Parse(message);
+
+        // Assert
+        Assert.IsNull(result);
+    }
 }

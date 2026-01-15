@@ -76,4 +76,17 @@ public class PipelineUrlParserTests
         // Assert
         Assert.IsNull(result);
     }
+
+    [TestMethod]
+    public void Parse_BuildIdOverflow_ReturnsNull()
+    {
+        // Arrange - build ID larger than int.MaxValue
+        var url = "https://dev.azure.com/myorg/myproject/_build/results?buildId=999999999999999999";
+
+        // Act
+        var result = PipelineMonitor.AzureDevOps.PipelineUrlParser.Parse(url);
+
+        // Assert
+        Assert.IsNull(result);
+    }
 }

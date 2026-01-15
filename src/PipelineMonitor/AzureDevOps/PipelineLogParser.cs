@@ -28,8 +28,13 @@ public partial class PipelineLogParser
             return null;
         }
 
+        if (!DateTimeOffset.TryParse(match.Groups["timestamp"].Value, out var timestamp))
+        {
+            return null;
+        }
+
         return new LogEntry(
-            DateTimeOffset.Parse(match.Groups["timestamp"].Value),
+            timestamp,
             match.Groups["level"].Value,
             match.Groups["message"].Value
         );
