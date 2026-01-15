@@ -26,11 +26,10 @@ internal interface IAzureCredentialProvider
 /// </summary>
 internal sealed class AzureCredentialProvider : IAzureCredentialProvider
 {
+    private readonly Lazy<TokenCredential> _credential = new(() => new DefaultAzureCredential());
+
     /// <inheritdoc/>
-    public TokenCredential GetCredential()
-    {
-        return new DefaultAzureCredential();
-    }
+    public TokenCredential GetCredential() => _credential.Value;
 }
 
 internal static class AzureCredentialProviderExtensions
