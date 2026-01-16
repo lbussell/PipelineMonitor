@@ -116,7 +116,7 @@ internal sealed class App(
             return;
         }
 
-        if (pipeline.Parameters is null || pipeline.Parameters.Count == 0)
+        if (pipeline.Parameters.Count == 0)
         {
             _ansiConsole.MarkupLine("[yellow]No parameters defined in this pipeline.[/]");
             return;
