@@ -79,11 +79,9 @@ var localPipelinesExample = async () =>
         .AddColumn("Pipeline");
 
     foreach (var pipeline in pipelines)
-    {
         table.AddRow($"[blue]{pipeline.RelativePath}[/]", $"[bold green]{pipeline.Name}[/]");
-    }
 
-    ansiConsole.Write(new Padder(table));
+    ansiConsole.Write(table);
 };
 
 await localPipelinesExample();
