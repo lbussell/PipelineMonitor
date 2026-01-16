@@ -3,14 +3,21 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 using PipelineMonitor;
 using PipelineMonitor.AzureDevOps;
+using PipelineMonitor.Logging;
 
 var builder = Host.CreateApplicationBuilder();
+
 builder.Services.TryAddPipelinesService();
 builder.Services.TryAddOrganizationDiscoveryService();
 builder.Services.TryAddRepoInfoResolver();
+
+builder.Logging.ClearProviders();
+builder.Logging.AddFileLogger();
+
 var host = builder.Build();
 
 var applicationLifetimeTokenSource = new CancellationTokenSource();

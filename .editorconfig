@@ -39,7 +39,7 @@ dotnet_separate_import_directive_groups = true
 dotnet_sort_system_directives_first = true
 
 # File header settings
-file_header_template = SPDX-FileCopyrightText: Copyright (c) 2025 YourName\nSPDX-License-Identifier: MIT-0
+file_header_template = SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell\nSPDX-License-Identifier: MIT
 
 # this. and Me. preferences
 dotnet_style_qualification_for_event = false:silent

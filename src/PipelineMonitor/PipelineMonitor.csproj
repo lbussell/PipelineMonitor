@@ -81,6 +81,7 @@
     <PackageReference Include="CliWrap" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" />
+    <PackageReference Include="NLog.Extensions.Hosting" />
     <PackageReference Include="System.CommandLine" />
   </ItemGroup>
 
