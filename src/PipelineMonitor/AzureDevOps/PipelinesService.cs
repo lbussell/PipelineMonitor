@@ -26,14 +26,14 @@ internal sealed class PipelinesService(
         return result;
     }
 
-    public async IAsyncEnumerable<LocalPipelineInfo> GetLocalPipelinesAsync()
+    public async Task<IEnumerable<LocalPipelineInfo>> GetLocalPipelinesAsync()
     {
         var repoInfo = await _repoInfoResolver.ResolveAsync();
         if (repoInfo.Organization is null
             || repoInfo.Project is null
             || repoInfo.Repository is null)
         {
-            yield break;
+            return [];
         }
 
         var connection = _vssConnectionProvider.GetConnection(repoInfo.Organization.Uri);
@@ -44,27 +44,26 @@ internal sealed class PipelinesService(
             project: repoInfo.Project.Name,
             repositoryType: "TfsGit");
 
-        foreach (var buildDefinition in buildDefinitions)
-        {
-            // Ignore non-YAML pipeline definitions for now.
-            if (buildDefinition.Process is not YamlProcess yamlBuildProcess)
+        return buildDefinitions
+            .Select(buildDefinition =>
             {
-                continue;
-            }
+                // Ignore non-YAML pipeline definitions for now.
+                if (buildDefinition.Process is not YamlProcess yamlBuildProcess)
+                    return null;
 
-            var relativePath = yamlBuildProcess.YamlFilename;
-            // Path.Join vs. Path.Combine: YamlProcess.YamlFilename has a leading
-            // slash, which causes Path.Combine to ignore the first argument.
-            // TODO: Extract Environment.CurrentDirectory into a service.
-            var pipelineFilePath = Path.Join(Environment.CurrentDirectory, relativePath);
+                var relativePath = yamlBuildProcess.YamlFilename;
+                // Path.Join vs. Path.Combine: YamlProcess.YamlFilename has a leading
+                // slash, which causes Path.Combine to ignore the first argument.
+                // TODO: Extract Environment.CurrentDirectory into a service.
+                var pipelineFilePath = Path.Join(Environment.CurrentDirectory, relativePath);
 
-            var pipeline = new LocalPipelineInfo(
-                Name: buildDefinition.Name,
-                DefinitionFile: new FileInfo(pipelineFilePath),
-                Id: new(buildDefinition.Id));
-
-            yield return pipeline;
-        }
+                return new LocalPipelineInfo(
+                    Name: buildDefinition.Name,
+                    DefinitionFile: new FileInfo(pipelineFilePath),
+                    Id: new(buildDefinition.Id));
+            })
+            // Filter out nulls (non-YAML pipelines).
+            .OfType<LocalPipelineInfo>();
     }
 
     public async IAsyncEnumerable<PipelineInfo> GetAllPipelinesAsync(OrganizationInfo org, ProjectInfo project)

@@ -17,6 +17,7 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 builder.Services.TryAddPipelinesService();
 builder.Services.TryAddOrganizationDiscoveryService();
 builder.Services.TryAddRepoInfoResolver();
+builder.Services.TryAddInteractionService();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddFileLogger(builder.Configuration);
@@ -64,8 +65,14 @@ var repoInfoExample = async () =>
 var localPipelinesExample = async () =>
 {
     var pipelinesService = host.Services.GetRequiredService<PipelinesService>();
-    var pipelines = pipelinesService.GetLocalPipelinesAsync();
-    await foreach (var pipeline in pipelines) Console.WriteLine(pipeline);
+    var interactionService = host.Services.GetRequiredService<IInteractionService>();
+
+    var pipelinesTask = pipelinesService.GetLocalPipelinesAsync();
+    var pipelines = await interactionService.ShowStatusAsync(
+        "Loading pipelines...",
+        () => pipelinesTask);
+
+    foreach (var pipeline in pipelines) Console.WriteLine(pipeline);
 };
 
 await localPipelinesExample();
