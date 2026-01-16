@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 using PipelineMonitor.Authentication;
+using PipelineMonitor.Git;
 
 namespace PipelineMonitor.AzureDevOps;
 

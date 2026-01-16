@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-namespace PipelineMonitor.AzureDevOps;
+namespace PipelineMonitor.Git;
 
 /// <summary>
 /// Provides access to the Git repository root for the current working directory.

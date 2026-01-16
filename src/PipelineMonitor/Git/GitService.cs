@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
-namespace PipelineMonitor.AzureDevOps;
+namespace PipelineMonitor.Git;
 
 /// <summary>
 /// Provides access to Git data from the current working directory.
