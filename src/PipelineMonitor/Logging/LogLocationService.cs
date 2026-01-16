@@ -32,7 +32,7 @@ internal sealed class LogLocationService : IHostedLifecycleService
     }
 }
 
-public static class LogLocationServiceExtensions
+internal static class LogLocationServiceExtensions
 {
     public static ILoggingBuilder AddLogLocationOnExit(this ILoggingBuilder loggingBuilder)
     {
