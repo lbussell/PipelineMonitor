@@ -83,6 +83,7 @@
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" />
     <PackageReference Include="NLog.Extensions.Hosting" />
     <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="System.Data.SqlClient" />
   </ItemGroup>
 
   <ItemGroup>
