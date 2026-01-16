@@ -45,7 +45,7 @@ public class PipelineYamlServiceTests
     }
 
     [TestMethod]
-    public void Parse_WithNoParametersSection_ReturnsNullParameters()
+    public void Parse_WithNoParametersSection_ReturnsEmptyList()
     {
         var yaml = """
             trigger:
@@ -57,7 +57,7 @@ public class PipelineYamlServiceTests
         var result = _service.Parse(yaml);
 
         Assert.IsNotNull(result);
-        Assert.IsNull(result.Parameters);
+        Assert.HasCount(0, result.Parameters);
     }
 
     [TestMethod]

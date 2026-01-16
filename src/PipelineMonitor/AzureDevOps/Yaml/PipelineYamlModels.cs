@@ -72,5 +72,5 @@ internal sealed record PipelineParameter
 internal sealed record PipelineYaml
 {
     [YamlMember(Alias = "parameters")]
-    public List<PipelineParameter>? Parameters { get; init; }
+    public List<PipelineParameter> Parameters { get; init; } = [];
 }
