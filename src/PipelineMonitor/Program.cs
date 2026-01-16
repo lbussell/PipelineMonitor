@@ -18,6 +18,7 @@ Console.WriteLine(builder.Configuration.GetDebugView());
 builder.Services.TryAddPipelinesService();
 builder.Services.TryAddOrganizationDiscoveryService();
 builder.Services.TryAddRepoInfoResolver();
+builder.Services.ShowLogLocationOnExit();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddFileLogger(builder.Configuration);
