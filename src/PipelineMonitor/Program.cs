@@ -50,7 +50,14 @@ var repoInfoExample = async () =>
     Console.WriteLine($"Detected Repository: {info}");
 };
 
-await repoInfoExample();
+var localPipelinesExample = async () =>
+{
+    var pipelinesService = host.Services.GetRequiredService<PipelinesService>();
+    var pipelines = pipelinesService.GetLocalPipelinesAsync();
+    await foreach (var pipeline in pipelines) Console.WriteLine(pipeline);
+};
+
+await localPipelinesExample();
 
 // Now stuff is done.
 // Signal to stop the application.
