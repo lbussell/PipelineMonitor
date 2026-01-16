@@ -13,6 +13,7 @@ using PipelineMonitor.AzureDevOps.Yaml;
 using PipelineMonitor.Logging;
 
 using Spectre.Console;
+using Spectre.Console.Rendering;
 
 var builder = Host.CreateApplicationBuilder();
 builder.Configuration.SetBasePath(AppContext.BaseDirectory);
@@ -122,27 +123,33 @@ internal sealed class App(
             return;
         }
 
-        var table = new Table()
-            .Border(TableBorder.Simple)
-            .AddColumn("Name")
-            .AddColumn("Type")
-            .AddColumn("Default")
-            .AddColumn("Values");
+        IRenderable title = new Markup("[bold]Parameters[/]").PadVertical();
+        List<IRenderable> content = [title];
 
         foreach (var param in pipeline.Parameters)
         {
-            var defaultValue = param.Default?.ToString() ?? "[dim]<none>[/]";
-            var values = param.Values is not null
-                ? string.Join(", ", param.Values)
-                : "[dim]<any>[/]";
+            List<IRenderable> paramContent = [];
 
-            table.AddRow(
-                $"[bold]{param.Name}[/]",
-                $"[blue]{param.Type}[/]",
-                defaultValue,
-                values);
+            if (!string.IsNullOrWhiteSpace(param.DisplayName))
+                paramContent.Add(new Markup(param.DisplayName.Trim().EscapeMarkup()));
+
+            string defaultText = "";
+            if (param.ParameterType is PipelineParameterType.StringList
+                && param.Default is IEnumerable<object> defaults)
+            {
+                defaultText = string.Join(", ", defaults.Select(d => d.ToString() ?? "unknown")).EscapeMarkup();
+            }
+            else if (param.Default is not null)
+            {
+                defaultText = param.Default.ToString().EscapeMarkup();
+            }
+
+            paramContent.Add(new Markup($"[blue]{param.Name.EscapeMarkup()}[/]: [dim]{defaultText}[/]"));
+
+            content.Add(new Rows(paramContent).PadBottom());
         }
 
-        _ansiConsole.Write(table);
+        var display = new Rows(content);
+        _ansiConsole.Write(display);
     }
 }

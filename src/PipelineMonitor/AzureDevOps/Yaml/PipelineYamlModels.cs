@@ -11,6 +11,7 @@ namespace PipelineMonitor.AzureDevOps.Yaml;
 internal enum PipelineParameterType
 {
     String,
+    StringList,
     Number,
     Boolean,
     Object,
@@ -50,6 +51,7 @@ internal sealed record PipelineParameter
     public PipelineParameterType ParameterType => Type?.ToLowerInvariant() switch
     {
         "string" => PipelineParameterType.String,
+        "stringlist" => PipelineParameterType.StringList,
         "number" => PipelineParameterType.Number,
         "boolean" or "bool" => PipelineParameterType.Boolean,
         "object" => PipelineParameterType.Object,

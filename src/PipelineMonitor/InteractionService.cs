@@ -46,3 +46,16 @@ internal static class InteractionServiceExtensions
         }
     }
 }
+
+internal static class ConsoleRenderingExtensions
+{
+    extension (IRenderable renderable)
+    {
+        public IRenderable PadLeft(int lines = 1) => new Padder(renderable).Padding(lines, 0, 0, 0);
+        public IRenderable PadTop(int lines = 1) => new Padder(renderable).Padding(0, lines, 0, 0);
+        public IRenderable PadRight(int lines = 1) => new Padder(renderable).Padding(0, 0, lines, 0);
+        public IRenderable PadBottom(int lines = 1) => new Padder(renderable).Padding(0, 0, 0, lines);
+        public IRenderable PadVertical(int lines = 1) => new Padder(renderable).Padding(0, lines, 0, lines);
+        public IRenderable PadHorizontal(int lines = 1) => new Padder(renderable).Padding(lines, 0, lines, 0);
+    }
+}
