@@ -133,12 +133,37 @@ internal sealed class App(
     }
 
     [Command("runs")]
-    public async Task ShowRunsAsync([Argument] string definitionPath)
+    public async Task ShowRunsAsync(
+        [Argument] string definitionPath,
+        int top = 10)
     {
         var pipeline = await GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
-        return;
+        var runsTask = _pipelinesService
+            .GetRunsForLocalPipelineAsync(pipeline.Id, top)
+            .ToListAsync()
+            .AsTask();
+
+        IReadOnlyList<PipelineRunInfo> runs = await _interactionService
+            .ShowStatusAsync("Loading pipeline runs...", () => runsTask);
+
+        if (runs.Count == 0)
+        {
+            _interactionService.DisplaySubtleMessage("No runs found for this pipeline.");
+            return;
+        }
+
+        IEnumerable<IRenderable> content =
+        [
+            new Markup($"Recent Runs for [bold green]{pipeline.Name}[/]:").PadBottom(),
+            ..runs.Select(run => run.SingleLineDisplay.PadBottom())
+        ];
+
+        IRenderable display = new Rows(content);
+        display = new Padder(display);
+
+        _ansiConsole.Write(display);
     }
 
     private async Task<IEnumerable<LocalPipelineInfo>> GetLocalPipelinesAsync()
@@ -149,7 +174,7 @@ internal sealed class App(
             .AsTask();
 
         List<LocalPipelineInfo> pipelines = await _interactionService
-            .ShowStatusAsync("Loading...", () => pipelinesTask);
+            .ShowStatusAsync("Loading Pipelines...", () => pipelinesTask);
 
         return pipelines;
     }

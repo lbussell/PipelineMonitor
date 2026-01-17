@@ -97,6 +97,94 @@ internal sealed class PipelinesService(
 
         } while (!string.IsNullOrEmpty(continuationToken));
     }
+
+    public async IAsyncEnumerable<PipelineRunInfo> GetRunsAsync(
+        OrganizationInfo org,
+        ProjectInfo project,
+        PipelineId pipelineId,
+        int top = 10,
+        [EnumeratorCancellation]
+        CancellationToken ct = default)
+    {
+        var connection = _vssConnectionProvider.GetConnection(org.Uri);
+        var client = connection.GetClient<PipelinesHttpClient>();
+        var buildsClient = connection.GetClient<BuildHttpClient>();
+
+        var builds = await buildsClient.GetBuildsAsync2(
+            project: project.Name,
+            definitions: [pipelineId.Value],
+            top: top,
+            cancellationToken: ct);
+
+        foreach (var build in builds)
+        {
+            var changes = await buildsClient.GetBuildChangesAsync2(project.Name, build.Id);
+            var change = changes.FirstOrDefault();
+            var commit = change is not null
+                ? new CommitInfo(
+                    Sha: change.Id,
+                    Message: change.Message,
+                    Author: change.Author.DisplayName,
+                    Date: change.Timestamp)
+                : null;
+
+            var result = build.Result switch
+            {
+                BuildResult.Succeeded => PipelineRunResult.Succeeded,
+                BuildResult.PartiallySucceeded => PipelineRunResult.PartiallySucceeded,
+                BuildResult.Failed => PipelineRunResult.Failed,
+                BuildResult.Canceled => PipelineRunResult.Canceled,
+                _ => PipelineRunResult.None,
+            };
+
+            yield return new PipelineRunInfo(
+                Name: build.BuildNumber,
+                Id: new RunId(build.Id),
+                State: build.Status?.ToString() ?? "Unknown",
+                Result: result,
+                Started: build.QueueTime,
+                Finished: build.FinishTime,
+                Commit: commit,
+                Url: build.Url);
+        }
+
+        // var report = await buildsClient.GetBuildReportAsync(project.Name, someBuild.Id);
+        // buildsClient.GetBuildLogLinesAsync()
+
+        // var runs = await client.ListRunsAsync(
+        //     project: project.Name,
+        //     pipelineId: pipelineId.Value,
+        //     cancellationToken: ct);
+
+        // return builds
+        // .Take(top)
+        // .Select(run => new PipelineRunInfo(
+        //     Name: run.Name,
+        //     Id: new RunId(run.Id),
+        //     State: run.State.ToString(),
+        //     Result: run.Result?.ToString(),
+        //     CreatedDate: run.CreatedDate,
+        //     FinishedDate: run.FinishedDate,
+        //     Url: run.Url?.ToString() ?? string.Empty))
+        // .ToList();
+
+        // return [];
+    }
+
+    public async IAsyncEnumerable<PipelineRunInfo> GetRunsForLocalPipelineAsync(
+        PipelineId pipelineId,
+        int top = 10,
+        [EnumeratorCancellation]
+        CancellationToken ct = default)
+    {
+        var repoInfo = await _repoInfoResolver.ResolveAsync(cancellationToken: ct);
+        if (repoInfo.Organization is null || repoInfo.Project is null) yield break;
+
+        var runs = GetRunsAsync(repoInfo.Organization, repoInfo.Project, pipelineId, top, ct);
+
+        await foreach (var run in runs.WithCancellation(ct))
+            yield return run;
+    }
 }
 
 internal static class PipelinesServiceExtensions
@@ -110,15 +198,5 @@ internal static class PipelinesServiceExtensions
             services.TryAddRepoInfoResolver();
             return services;
         }
-    }
-
-    extension(ResolvedRepoInfo repoInfo)
-    {
-        public bool IsComplete => repoInfo is
-        {
-            Organization: not null,
-            Project: not null,
-            Repository: not null,
-        };
     }
 }

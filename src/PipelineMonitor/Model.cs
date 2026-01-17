@@ -16,3 +16,26 @@ internal sealed record PipelineInfo(string Name, PipelineId Id, string Url, stri
 internal readonly record struct PipelineId(int Value);
 
 internal sealed record LocalPipelineInfo(string Name, FileInfo DefinitionFile, PipelineId Id, string RelativePath);
+
+internal readonly record struct RunId(int Value);
+
+internal sealed record PipelineRunInfo(
+    string Name,
+    RunId Id,
+    string State,
+    PipelineRunResult Result,
+    DateTimeOffset? Started,
+    DateTimeOffset? Finished,
+    CommitInfo? Commit,
+    string Url);
+
+internal enum PipelineRunResult
+{
+    None,
+    Succeeded,
+    PartiallySucceeded,
+    Failed,
+    Canceled,
+}
+
+internal sealed record CommitInfo(string Sha, string Message, string Author, DateTime? Date);
