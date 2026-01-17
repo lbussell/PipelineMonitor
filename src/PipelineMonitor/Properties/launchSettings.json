@@ -7,6 +7,14 @@
         "DOTNET_ENVIRONMENT": "Development"
       },
       "workingDirectory": "/Users/loganbussell/src/docker-tools"
+    },
+    "ListRuns": {
+      "commandName": "Project",
+      "commandLineArgs": "runs eng/pipelines/dotnet-core-nightly.yml",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "workingDirectory": "/Users/loganbussell/src/dotnet-docker"
     }
   }
 }
