@@ -313,11 +313,11 @@ public class PipelineYamlServiceTests
     [TestMethod]
     public async Task ParseAsync_AllParameterTypesExample_ParsesAllParametersCorrectly()
     {
-        // This test verifies the all-parameter-types.yml example file can be parsed
+        // This test verifies the parameters-test.yml example file can be parsed
         var exampleFile = Path.Combine(
             Directory.GetCurrentDirectory(),
             "..", "..", "..", "..", "..",
-            "examples", "all-parameter-types.yml");
+            "pipelines", "parameters-test.yml");
 
         // Skip if the example file doesn't exist (e.g., in CI)
         if (!File.Exists(exampleFile))
