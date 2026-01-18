@@ -106,10 +106,4 @@ jobs:
       echo "Number with default: ${{ parameters.numberWithDefault }}"
       echo "Number with values: ${{ parameters.numberWithValues }}"
       echo "Boolean with default: ${{ parameters.booleanWithDefault }}"
-    displayName: 'Display Simple Parameter Values'
-  
-  - script: |
-      echo "StringList values selected:"
-      ${{ each item in parameters.stringListWithDefault }}:
-        echo "  - ${{ item }}"
-    displayName: 'Display StringList Parameter'
+    displayName: 'Display Parameter Values'
