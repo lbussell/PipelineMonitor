@@ -4,7 +4,7 @@ This directory contains example Azure Pipelines YAML files demonstrating various
 
 ## all-parameter-types.yml
 
-This example demonstrates **all supported Azure Pipelines parameter types** with complete coverage of:
+This example demonstrates **all supported Azure Pipelines parameter types for interactive runtime input** with complete coverage of:
 
 ### Parameter Types Covered
 
@@ -13,13 +13,15 @@ This example demonstrates **all supported Azure Pipelines parameter types** with
    - Without default value
    - With allowed values (enumeration)
 
-2. **StringList** - Array of strings
-   - With default value
-   - Without default value
+2. **StringList** - Multiple selection from allowed values
+   - With default value (subset of allowed values)
+   - Without default value (empty selection)
+   - **Note**: StringList parameters always require a `values` field with allowed options. Defaults must be a subset of these values.
 
 3. **Number** - Numeric values
    - With default value
    - Without default value
+   - With allowed values (enumeration)
 
 4. **Boolean** - True/false values
    - With default value
@@ -29,49 +31,26 @@ This example demonstrates **all supported Azure Pipelines parameter types** with
    - With default value
    - Without default value
 
-6. **Step** - Single pipeline step
-   - With default value
-   - Without default value
-
-7. **StepList** - Array of pipeline steps
-   - With default value
-   - Without default value
-
-8. **Job** - Single pipeline job
-   - With default value
-   - Without default value
-
-9. **JobList** - Array of pipeline jobs
-   - With default value
-   - Without default value
-
-10. **Deployment** - Single deployment job
-    - With default value
-    - Without default value
-
-11. **DeploymentList** - Array of deployment jobs
-    - With default value
-    - Without default value
-
-12. **Stage** - Single pipeline stage
-    - With default value
-    - Without default value
-
-13. **StageList** - Array of pipeline stages
-    - With default value
-    - Without default value
-
 ### Purpose
 
 This example serves as:
-- **Reference documentation** for all supported parameter types
+- **Reference documentation** for all supported interactive parameter types
 - **Test data** for validating the PipelineMonitor parameter parsing functionality
 - **Template** for developers creating parameterized Azure Pipelines
 
 ### Total Parameters
 
-The file contains **27 parameters** covering all 13 parameter types, each with at least:
-- One parameter with a default value
-- One parameter without a default value
+The file contains **11 parameters** covering the 5 interactive parameter types (String, StringList, Number, Boolean, Object), each with:
+- Parameters with default values
+- Parameters without default values
+- Additional variations (e.g., with allowed values)
 
-Additionally, string parameters demonstrate the use of `displayName` and `values` properties.
+### Note on Non-Interactive Parameter Types
+
+The following parameter types are **not included** as they are not designed for interactive runtime input:
+- Step / StepList
+- Job / JobList
+- Deployment / DeploymentList
+- Stage / StageList
+
+These types are used for template composition and pipeline structure, not for user-provided runtime parameters.
