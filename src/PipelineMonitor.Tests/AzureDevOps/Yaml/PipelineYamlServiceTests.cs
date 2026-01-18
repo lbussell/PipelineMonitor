@@ -309,4 +309,105 @@ public class PipelineYamlServiceTests
         Assert.HasCount(1, result.Parameters);
         Assert.AreEqual("test", result.Parameters[0].Name);
     }
+
+    [TestMethod]
+    public async Task ParseAsync_AllParameterTypesExample_ParsesAllParametersCorrectly()
+    {
+        // This test verifies the all-parameter-types.yml example file can be parsed
+        var exampleFile = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "..", "..", "..", "..", "..",
+            "examples", "all-parameter-types.yml");
+
+        // Skip if the example file doesn't exist (e.g., in CI)
+        if (!File.Exists(exampleFile))
+        {
+            Assert.Inconclusive($"Example file not found at {exampleFile}");
+            return;
+        }
+
+        var result = await _service.ParseAsync(exampleFile);
+
+        Assert.IsNotNull(result);
+        Assert.IsNotNull(result.Parameters);
+        Assert.IsGreaterThanOrEqualTo(26, result.Parameters.Count, $"Expected at least 26 parameters, got {result.Parameters.Count}");
+
+        // Verify we have parameters of each type (with and without defaults)
+        var parametersByType = result.Parameters.GroupBy(p => p.ParameterType).ToDictionary(g => g.Key, g => g.ToList());
+
+        // Verify String parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.String));
+        Assert.IsGreaterThanOrEqualTo(2, parametersByType[PipelineParameterType.String].Count);
+        Assert.IsTrue(parametersByType[PipelineParameterType.String].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.String].Any(p => p.Default == null));
+
+        // Verify StringList parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.StringList));
+        Assert.IsTrue(parametersByType[PipelineParameterType.StringList].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.StringList].Any(p => p.Default == null));
+
+        // Verify Number parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Number));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Number].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Number].Any(p => p.Default == null));
+
+        // Verify Boolean parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Boolean));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Boolean].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Boolean].Any(p => p.Default == null));
+
+        // Verify Object parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Object));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Object].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Object].Any(p => p.Default == null));
+
+        // Verify Step parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Step));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Step].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Step].Any(p => p.Default == null));
+
+        // Verify StepList parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.StepList));
+        Assert.IsTrue(parametersByType[PipelineParameterType.StepList].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.StepList].Any(p => p.Default == null));
+
+        // Verify Job parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Job));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Job].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Job].Any(p => p.Default == null));
+
+        // Verify JobList parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.JobList));
+        Assert.IsTrue(parametersByType[PipelineParameterType.JobList].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.JobList].Any(p => p.Default == null));
+
+        // Verify Deployment parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Deployment));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Deployment].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Deployment].Any(p => p.Default == null));
+
+        // Verify DeploymentList parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.DeploymentList));
+        Assert.IsTrue(parametersByType[PipelineParameterType.DeploymentList].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.DeploymentList].Any(p => p.Default == null));
+
+        // Verify Stage parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Stage));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Stage].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Stage].Any(p => p.Default == null));
+
+        // Verify StageList parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.StageList));
+        Assert.IsTrue(parametersByType[PipelineParameterType.StageList].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.StageList].Any(p => p.Default == null));
+
+        // Verify that displayName is set for all parameters
+        Assert.IsTrue(result.Parameters.All(p => !string.IsNullOrEmpty(p.DisplayName)));
+
+        // Verify that the string parameter with values has the values list
+        var stringWithValues = result.Parameters.FirstOrDefault(p => p.Name == "stringWithValues");
+        Assert.IsNotNull(stringWithValues);
+        Assert.IsNotNull(stringWithValues.Values);
+        CollectionAssert.AreEqual(new[] { "dev", "staging", "prod" }, stringWithValues.Values);
+    }
 }

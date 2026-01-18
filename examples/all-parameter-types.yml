@@ -1,0 +1,243 @@
+# This example pipeline demonstrates all supported Azure Pipelines parameter types
+# with both default and no-default variations.
+
+parameters:
+# String parameters
+- name: stringWithDefault
+  displayName: 'String Parameter (with default)'
+  type: string
+  default: 'default-value'
+
+- name: stringWithoutDefault
+  displayName: 'String Parameter (no default)'
+  type: string
+
+- name: stringWithValues
+  displayName: 'String Parameter (with allowed values)'
+  type: string
+  default: 'dev'
+  values:
+  - dev
+  - staging
+  - prod
+
+# StringList parameters
+- name: stringListWithDefault
+  displayName: 'String List Parameter (with default)'
+  type: stringList
+  default:
+  - item1
+  - item2
+  - item3
+
+- name: stringListWithoutDefault
+  displayName: 'String List Parameter (no default)'
+  type: stringList
+
+# Number parameters
+- name: numberWithDefault
+  displayName: 'Number Parameter (with default)'
+  type: number
+  default: 42
+
+- name: numberWithoutDefault
+  displayName: 'Number Parameter (no default)'
+  type: number
+
+# Boolean parameters
+- name: booleanWithDefault
+  displayName: 'Boolean Parameter (with default)'
+  type: boolean
+  default: true
+
+- name: booleanWithoutDefault
+  displayName: 'Boolean Parameter (no default)'
+  type: boolean
+
+# Object parameters
+- name: objectWithDefault
+  displayName: 'Object Parameter (with default)'
+  type: object
+  default:
+    key1: value1
+    key2: value2
+    nested:
+      nestedKey: nestedValue
+
+- name: objectWithoutDefault
+  displayName: 'Object Parameter (no default)'
+  type: object
+
+# Step parameters
+- name: stepWithDefault
+  displayName: 'Step Parameter (with default)'
+  type: step
+  default:
+    script: echo "Default step"
+    displayName: 'Default Step'
+
+- name: stepWithoutDefault
+  displayName: 'Step Parameter (no default)'
+  type: step
+
+# StepList parameters
+- name: stepListWithDefault
+  displayName: 'Step List Parameter (with default)'
+  type: stepList
+  default:
+  - script: echo "First default step"
+    displayName: 'First Step'
+  - script: echo "Second default step"
+    displayName: 'Second Step'
+
+- name: stepListWithoutDefault
+  displayName: 'Step List Parameter (no default)'
+  type: stepList
+
+# Job parameters
+- name: jobWithDefault
+  displayName: 'Job Parameter (with default)'
+  type: job
+  default:
+    job: DefaultJob
+    displayName: 'Default Job'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Default job step"
+
+- name: jobWithoutDefault
+  displayName: 'Job Parameter (no default)'
+  type: job
+
+# JobList parameters
+- name: jobListWithDefault
+  displayName: 'Job List Parameter (with default)'
+  type: jobList
+  default:
+  - job: Job1
+    displayName: 'First Job'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Job 1"
+  - job: Job2
+    displayName: 'Second Job'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Job 2"
+
+- name: jobListWithoutDefault
+  displayName: 'Job List Parameter (no default)'
+  type: jobList
+
+# Deployment parameters
+- name: deploymentWithDefault
+  displayName: 'Deployment Parameter (with default)'
+  type: deployment
+  default:
+    deployment: DefaultDeployment
+    displayName: 'Default Deployment'
+    environment: 'dev'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo "Deploying"
+
+- name: deploymentWithoutDefault
+  displayName: 'Deployment Parameter (no default)'
+  type: deployment
+
+# DeploymentList parameters
+- name: deploymentListWithDefault
+  displayName: 'Deployment List Parameter (with default)'
+  type: deploymentList
+  default:
+  - deployment: Deployment1
+    displayName: 'First Deployment'
+    environment: 'dev'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo "Deploy 1"
+  - deployment: Deployment2
+    displayName: 'Second Deployment'
+    environment: 'prod'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo "Deploy 2"
+
+- name: deploymentListWithoutDefault
+  displayName: 'Deployment List Parameter (no default)'
+  type: deploymentList
+
+# Stage parameters
+- name: stageWithDefault
+  displayName: 'Stage Parameter (with default)'
+  type: stage
+  default:
+    stage: DefaultStage
+    displayName: 'Default Stage'
+    jobs:
+    - job: StageJob
+      steps:
+      - script: echo "Stage job"
+
+- name: stageWithoutDefault
+  displayName: 'Stage Parameter (no default)'
+  type: stage
+
+# StageList parameters
+- name: stageListWithDefault
+  displayName: 'Stage List Parameter (with default)'
+  type: stageList
+  default:
+  - stage: Stage1
+    displayName: 'First Stage'
+    jobs:
+    - job: Stage1Job
+      steps:
+      - script: echo "Stage 1"
+  - stage: Stage2
+    displayName: 'Second Stage'
+    jobs:
+    - job: Stage2Job
+      steps:
+      - script: echo "Stage 2"
+
+- name: stageListWithoutDefault
+  displayName: 'Stage List Parameter (no default)'
+  type: stageList
+
+# Pipeline definition using the parameters
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- ${{ parameters.stageListWithDefault }}
+
+- stage: ExampleStage
+  displayName: 'Example Stage Using Parameters'
+  jobs:
+  - ${{ parameters.jobListWithDefault }}
+  
+  - job: ExampleJob
+    displayName: 'Example Job Using Parameters'
+    steps:
+    - ${{ parameters.stepListWithDefault }}
+    
+    - script: |
+        echo "String with default: ${{ parameters.stringWithDefault }}"
+        echo "Number with default: ${{ parameters.numberWithDefault }}"
+        echo "Boolean with default: ${{ parameters.booleanWithDefault }}"
+      displayName: 'Display Simple Parameter Values'
+    
+    - ${{ parameters.stepWithDefault }}
