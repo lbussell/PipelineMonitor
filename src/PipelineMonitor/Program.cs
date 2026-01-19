@@ -142,7 +142,7 @@ internal sealed class App(
         var pipeline = await GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
-        var variablesTask = _pipelinesService.GetVariablesForLocalPipelineAsync(pipeline.Id);
+        var variablesTask = _pipelinesService.GetVariablesAsync(pipeline);
         var variables = await _interactionService.ShowStatusAsync("Loading variables...", () => variablesTask);
 
         if (variables.Count == 0)
@@ -183,30 +183,26 @@ internal sealed class App(
         var pipeline = await GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
-        var runsTask = _pipelinesService
-            .GetRunsForLocalPipelineAsync(pipeline.Id, top)
-            .ToListAsync()
-            .AsTask();
+        var pipelineRuns = _pipelinesService.GetRunsAsync(pipeline, top);
 
-        IReadOnlyList<PipelineRunInfo> runs = await _interactionService
-            .ShowStatusAsync("Loading pipeline runs...", () => runsTask);
+        var descriptionColumn = new TableColumn("Description");
+        var table = new Table()
+            .AddColumn("") // Result
+            .AddColumn(descriptionColumn)
+            .AddColumn("Stages")
+            .AddColumn(new TableColumn("").RightAligned()) // Time
+            .Border(TableBorder.Horizontal);
 
-        if (runs.Count == 0)
-        {
-            _interactionService.DisplaySubtleMessage("No runs found for this pipeline.");
-            return;
-        }
-
-        IEnumerable<IRenderable> content =
-        [
-            new Markup($"Recent Runs for [bold green]{pipeline.Name}[/]:").PadBottom(),
-            runs.ToTable(),
-        ];
-
-        IRenderable display = new Rows(content);
-        display = new Padder(display);
-
-        _ansiConsole.Write(display);
+        await _ansiConsole
+            .Live(table)
+            .StartAsync(async context =>
+            {
+                await foreach (var run in pipelineRuns)
+                {
+                    table.AddRow(run.ResultSymbol, run.RunDetails, run.StagesSummary, run.TimeDetails);
+                    context.Refresh();
+                }
+            });
     }
 
     private async Task<IEnumerable<LocalPipelineInfo>> GetLocalPipelinesAsync()
@@ -233,15 +229,23 @@ internal sealed class App(
             return null;
         }
 
-        var thisPipeline = pipelines.FirstOrDefault(pipeline =>
-            pipeline.DefinitionFile.FullName.Equals(pipelineFile.FullName));
+        var matchingPipelines = pipelines
+            .Where(pipeline =>
+                pipeline.DefinitionFile.FullName.Equals(pipelineFile.FullName))
+            .ToList();
 
-        if (thisPipeline is null)
-        {
+        var pipelineInfo = matchingPipelines.FirstOrDefault();
+
+        if (matchingPipelines.Count > 1)
+            // Prompt user to select which pipeline they meant
+            pipelineInfo = await _interactionService.SelectAsync(
+                "Multiple pipelines found for the specified definition file. Please select one:",
+                matchingPipelines,
+                pipeline => pipeline.Name);
+
+        if (pipelineInfo is null)
             _interactionService.DisplayError($"No pipeline found for definition file '{definitionPath}'.");
-            return null;
-        }
 
-        return thisPipeline;
+        return pipelineInfo;
     }
 }

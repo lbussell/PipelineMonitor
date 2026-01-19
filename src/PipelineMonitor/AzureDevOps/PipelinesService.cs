@@ -68,7 +68,10 @@ internal sealed class PipelinesService(
                 Name: buildDefinition.Name,
                 DefinitionFile: new FileInfo(pipelineFilePath),
                 Id: new(buildDefinition.Id),
-                RelativePath: relativePath);
+                RelativePath: relativePath,
+                Organization: repoInfo.Organization,
+                Project: repoInfo.Project,
+                Repository: repoInfo.Repository);
         }
     }
 
@@ -110,15 +113,12 @@ internal sealed class PipelinesService(
         var connection = _vssConnectionProvider.GetConnection(org.Uri);
         var client = connection.GetClient<PipelinesHttpClient>();
         var buildsClient = connection.GetClient<BuildHttpClient>();
-        // var workClient = connection.GetClient<>();
 
         var builds = await buildsClient.GetBuildsAsync2(
             project: project.Name,
             definitions: [pipelineId.Value],
             top: top,
             cancellationToken: ct);
-
-        // var work = workClient.get
 
         foreach (var build in builds)
         {
@@ -172,35 +172,26 @@ internal sealed class PipelinesService(
         }
     }
 
-    public async IAsyncEnumerable<PipelineRunInfo> GetRunsForLocalPipelineAsync(
-        PipelineId pipelineId,
+    public async IAsyncEnumerable<PipelineRunInfo> GetRunsAsync(
+        LocalPipelineInfo pipeline,
         int top = 10,
         [EnumeratorCancellation]
         CancellationToken ct = default)
     {
-        var repoInfo = await _repoInfoResolver.ResolveAsync(cancellationToken: ct);
-        if (repoInfo.Organization is null || repoInfo.Project is null) yield break;
-
-        var runs = GetRunsAsync(repoInfo.Organization, repoInfo.Project, pipelineId, top, ct);
-
-        await foreach (var run in runs.WithCancellation(ct))
-            yield return run;
+        var runs = GetRunsAsync(pipeline.Organization, pipeline.Project, pipeline.Id, top, ct);
+        await foreach (var run in runs.WithCancellation(ct)) yield return run;
     }
 
-    public async Task<IReadOnlyList<PipelineVariableInfo>> GetVariablesForLocalPipelineAsync(
-        PipelineId pipelineId,
+    public async Task<IReadOnlyList<PipelineVariableInfo>> GetVariablesAsync(
+        LocalPipelineInfo pipeline,
         CancellationToken ct = default)
     {
-        var repoInfo = await _repoInfoResolver.ResolveAsync(cancellationToken: ct);
-        if (repoInfo.Organization is null || repoInfo.Project is null)
-            return [];
-
-        var connection = _vssConnectionProvider.GetConnection(repoInfo.Organization.Uri);
+        var connection = _vssConnectionProvider.GetConnection(pipeline.Organization.Uri);
         var buildsClient = connection.GetClient<BuildHttpClient>();
 
         var buildDefinition = await buildsClient.GetDefinitionAsync(
-            project: repoInfo.Project.Name,
-            definitionId: pipelineId.Value,
+            project: pipeline.Project.Name,
+            definitionId: pipeline.Id.Value,
             cancellationToken: ct);
 
         if (buildDefinition.Variables is null)
