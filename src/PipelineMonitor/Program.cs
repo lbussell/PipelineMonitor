@@ -183,30 +183,26 @@ internal sealed class App(
         var pipeline = await GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
-        var runsTask = _pipelinesService
-            .GetRunsForLocalPipelineAsync(pipeline.Id, top)
-            .ToListAsync()
-            .AsTask();
+        var runsTask = _pipelinesService.GetRunsForLocalPipelineAsync(pipeline.Id, top);
 
-        IReadOnlyList<PipelineRunInfo> runs = await _interactionService
-            .ShowStatusAsync("Loading pipeline runs...", () => runsTask);
+        var descriptionColumn = new TableColumn("Description");
+        var table = new Table()
+            .AddColumn("") // Result
+            .AddColumn(descriptionColumn)
+            .AddColumn("Stages")
+            .AddColumn(new TableColumn("").RightAligned()) // Time
+            .Border(TableBorder.Horizontal);
 
-        if (runs.Count == 0)
-        {
-            _interactionService.DisplaySubtleMessage("No runs found for this pipeline.");
-            return;
-        }
-
-        IEnumerable<IRenderable> content =
-        [
-            new Markup($"Recent Runs for [bold green]{pipeline.Name}[/]:").PadBottom(),
-            runs.ToTable(),
-        ];
-
-        IRenderable display = new Rows(content);
-        display = new Padder(display);
-
-        _ansiConsole.Write(display);
+        await _ansiConsole
+            .Live(table)
+            .StartAsync(async context =>
+            {
+                await foreach (var run in runsTask)
+                {
+                    table.AddRow(run.ResultSymbol, run.RunDetails, run.StagesSummary, run.TimeDetails);
+                    context.Refresh();
+                }
+            });
     }
 
     private async Task<IEnumerable<LocalPipelineInfo>> GetLocalPipelinesAsync()

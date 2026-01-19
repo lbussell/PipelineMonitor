@@ -66,25 +66,6 @@ internal static class Display
                     })).Padding(0, 0, 0, 0);
     }
 
-    extension(IEnumerable<PipelineRunInfo> runs)
-    {
-        public IRenderable ToTable()
-        {
-            var grid = new Grid()
-                .AddColumn()
-                .AddColumn()
-                .AddColumn()
-                .AddColumn(new GridColumn().NoWrap().RightAligned());
-
-            grid.AddRow(new Markup(""), new Markup("[dim]Description[/]").PadBottom(), new Markup(""), new Markup(""));
-
-            foreach (var run in runs)
-                grid.AddRow(run.ResultSymbol, run.RunDetails.PadBottom(), run.StagesSummary, run.TimeDetails);
-
-            return grid;
-        }
-    }
-
     private sealed class ResultBadge(PipelineRunResult result) : IRenderable
     {
         public Measurement Measure(RenderOptions options, int maxWidth) => new(3, 3);
