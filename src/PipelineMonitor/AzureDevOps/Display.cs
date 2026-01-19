@@ -87,15 +87,6 @@ internal static class Display
 
     private sealed class ResultBadge(PipelineRunResult result) : IRenderable
     {
-        private static readonly (string Symbol, Color Color)[] Styles =
-        [
-            (" ", Color.Grey),    // None
-            ("✓", Color.Green),   // Succeeded
-            ("~", Color.Yellow),  // PartiallySucceeded
-            ("✗", Color.Red),     // Failed
-            ("/", Color.Grey),    // Canceled
-        ];
-
         public Measurement Measure(RenderOptions options, int maxWidth)
         {
             return new(3, 3);
@@ -103,7 +94,14 @@ internal static class Display
 
         public IEnumerable<Segment> Render(RenderOptions options, int maxWidth)
         {
-            var (symbol, color) = Styles[(int)result];
+            var (symbol, color) = result switch
+            {
+                PipelineRunResult.Succeeded => ("✓", Color.Green),
+                PipelineRunResult.PartiallySucceeded => ("~", Color.Yellow),
+                PipelineRunResult.Failed => ("✗", Color.Red),
+                PipelineRunResult.Canceled => ("/", Color.Grey),
+                _ => (" ", Color.Grey),
+            };
             var style = new Style(foreground: color);
             yield return new Segment("[", style);
             yield return new Segment(symbol, style);
