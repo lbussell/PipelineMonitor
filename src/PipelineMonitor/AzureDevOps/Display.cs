@@ -87,10 +87,7 @@ internal static class Display
 
     private sealed class ResultBadge(PipelineRunResult result) : IRenderable
     {
-        public Measurement Measure(RenderOptions options, int maxWidth)
-        {
-            return new(3, 3);
-        }
+        public Measurement Measure(RenderOptions options, int maxWidth) => new(3, 3);
 
         public IEnumerable<Segment> Render(RenderOptions options, int maxWidth)
         {
