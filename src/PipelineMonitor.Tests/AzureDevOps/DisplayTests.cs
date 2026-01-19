@@ -12,7 +12,6 @@ public class DisplayTests
     [TestMethod]
     public void RunDetails_WithBracketsInCommitMessage_DoesNotThrow()
     {
-        // Arrange - Create a run with a commit message containing brackets (common in merge commits)
         var run = new PipelineRunInfo(
             Name: "Build Pipeline",
             Id: new RunId(123),
@@ -30,7 +29,6 @@ public class DisplayTests
             Stages: []
         );
 
-        // Act & Assert - Should not throw InvalidOperationException
         var result = run.RunDetails;
         Assert.IsNotNull(result);
     }
@@ -38,7 +36,6 @@ public class DisplayTests
     [TestMethod]
     public void RunDetails_WithSquareBracketsInCommitMessage_DoesNotThrow()
     {
-        // Arrange - Create a run with square brackets that could be misinterpreted as markup
         var run = new PipelineRunInfo(
             Name: "Build Pipeline [CI]",
             Id: new RunId(456),
@@ -56,7 +53,6 @@ public class DisplayTests
             Stages: []
         );
 
-        // Act & Assert - Should not throw InvalidOperationException
         var result = run.RunDetails;
         Assert.IsNotNull(result);
     }
@@ -64,7 +60,6 @@ public class DisplayTests
     [TestMethod]
     public void SingleLineDisplay_WithBracketsInPipelineName_DoesNotThrow()
     {
-        // Arrange - Create a pipeline with brackets in the name
         var pipeline = new LocalPipelineInfo(
             Name: "Build Pipeline [Production]",
             DefinitionFile: new FileInfo("/path/to/azure-pipelines.yml"),
@@ -72,7 +67,6 @@ public class DisplayTests
             RelativePath: "path/to/[bracketed]/azure-pipelines.yml"
         );
 
-        // Act & Assert - Should not throw InvalidOperationException
         var result = pipeline.SingleLineDisplay;
         Assert.IsNotNull(result);
     }
