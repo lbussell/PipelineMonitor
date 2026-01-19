@@ -64,7 +64,10 @@ public class DisplayTests
             Name: "Build Pipeline [Production]",
             DefinitionFile: new FileInfo("/path/to/azure-pipelines.yml"),
             Id: new PipelineId(789),
-            RelativePath: "path/to/[bracketed]/azure-pipelines.yml"
+            RelativePath: "path/to/[bracketed]/azure-pipelines.yml",
+            Organization: new OrganizationInfo("TestOrg", new Uri("https://dev.azure.com/TestOrg")),
+            Project: new ProjectInfo("TestProject"),
+            Repository: new RepositoryInfo("TestRepo", Guid.NewGuid())
         );
 
         var result = pipeline.SingleLineDisplay;

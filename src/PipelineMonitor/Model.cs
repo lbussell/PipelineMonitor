@@ -15,7 +15,14 @@ internal sealed record PipelineInfo(string Name, PipelineId Id, string Url, stri
 
 internal readonly record struct PipelineId(int Value);
 
-internal sealed record LocalPipelineInfo(string Name, FileInfo DefinitionFile, PipelineId Id, string RelativePath);
+internal sealed record LocalPipelineInfo(
+    string Name,
+    FileInfo DefinitionFile,
+    PipelineId Id,
+    string RelativePath,
+    OrganizationInfo Organization,
+    ProjectInfo Project,
+    RepositoryInfo Repository);
 
 internal readonly record struct RunId(int Value);
 

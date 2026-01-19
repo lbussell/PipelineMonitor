@@ -68,7 +68,10 @@ internal sealed class PipelinesService(
                 Name: buildDefinition.Name,
                 DefinitionFile: new FileInfo(pipelineFilePath),
                 Id: new(buildDefinition.Id),
-                RelativePath: relativePath);
+                RelativePath: relativePath,
+                Organization: repoInfo.Organization,
+                Project: repoInfo.Project,
+                Repository: repoInfo.Repository);
         }
     }
 
