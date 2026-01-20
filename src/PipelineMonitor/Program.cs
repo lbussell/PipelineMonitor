@@ -49,6 +49,11 @@ internal sealed class App(
     private readonly IInteractionService _interactionService = interactionService;
     private readonly PipelinesService _pipelinesService = pipelinesService;
 
+    private static readonly System.Text.Json.JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true
+    };
+
     [Command("discover")]
     public async Task DiscoverPipelinesAsync([FromServices] PipelinesService pipelinesService)
     {
@@ -173,6 +178,66 @@ internal sealed class App(
 
         _ansiConsole.Write(table);
         _ansiConsole.WriteLine();
+    }
+
+    [Command("variables export")]
+    public async Task ExportVariablesAsync(
+        [Argument] string definitionPath,
+        [Argument] string outputFile)
+    {
+        var pipeline = await GetLocalPipelineAsync(definitionPath);
+        if (pipeline is null) return;
+
+        var variablesTask = _pipelinesService.GetVariablesAsync(pipeline);
+        var variables = await _interactionService.ShowStatusAsync("Loading variables...", () => variablesTask);
+
+        var json = System.Text.Json.JsonSerializer.Serialize(variables, JsonOptions);
+
+        await File.WriteAllTextAsync(outputFile, json);
+        _interactionService.DisplaySuccess($"Exported {variables.Count} variable(s) to {outputFile}");
+    }
+
+    [Command("variables import")]
+    public async Task ImportVariablesAsync(
+        [Argument] string definitionPath,
+        [Argument] string inputFile,
+        bool clear = false)
+    {
+        var pipeline = await GetLocalPipelineAsync(definitionPath);
+        if (pipeline is null) return;
+
+        if (!File.Exists(inputFile))
+        {
+            _interactionService.DisplayError($"Input file '{inputFile}' does not exist.");
+            return;
+        }
+
+        List<PipelineVariableInfo>? variables;
+        try
+        {
+            var json = await File.ReadAllTextAsync(inputFile);
+            variables = System.Text.Json.JsonSerializer.Deserialize<List<PipelineVariableInfo>>(json);
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            _interactionService.DisplayError($"Failed to parse JSON file: {ex.Message}");
+            return;
+        }
+
+        if (variables is null || variables.Count == 0)
+        {
+            _interactionService.DisplayWarning("No variables found in the input file.");
+            return;
+        }
+
+        await _interactionService.ShowStatusAsync("Setting variables...", async () =>
+        {
+            await _pipelinesService.SetVariablesAsync(pipeline, variables, clear);
+            return true;
+        });
+
+        var actionDescription = clear ? "replaced with" : "imported";
+        _interactionService.DisplaySuccess($"Successfully {actionDescription} {variables.Count} variable(s).");
     }
 
     [Command("runs")]
