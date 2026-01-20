@@ -209,8 +209,17 @@ internal sealed class App(
             return;
         }
 
-        var json = await File.ReadAllTextAsync(inputFile);
-        var variables = System.Text.Json.JsonSerializer.Deserialize<List<PipelineVariableInfo>>(json);
+        List<PipelineVariableInfo>? variables;
+        try
+        {
+            var json = await File.ReadAllTextAsync(inputFile);
+            variables = System.Text.Json.JsonSerializer.Deserialize<List<PipelineVariableInfo>>(json);
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            _interactionService.DisplayError($"Failed to parse JSON file: {ex.Message}");
+            return;
+        }
 
         if (variables is null || variables.Count == 0)
         {

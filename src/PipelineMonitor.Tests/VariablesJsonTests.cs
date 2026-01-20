@@ -93,4 +93,25 @@ public sealed class VariablesJsonTests
             Assert.AreEqual(originalVariables[i].AllowOverride, deserializedVariables[i].AllowOverride);
         }
     }
+
+    [TestMethod]
+    public void VariableInfo_InvalidJson_ThrowsJsonException()
+    {
+        // Arrange
+        var invalidJson = "{ invalid json }";
+        var exceptionThrown = false;
+
+        // Act
+        try
+        {
+            JsonSerializer.Deserialize<List<PipelineVariableInfo>>(invalidJson);
+        }
+        catch (JsonException)
+        {
+            exceptionThrown = true;
+        }
+
+        // Assert
+        Assert.IsTrue(exceptionThrown, "Expected JsonException to be thrown for invalid JSON");
+    }
 }
