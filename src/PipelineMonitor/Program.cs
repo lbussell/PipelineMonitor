@@ -314,8 +314,8 @@ internal sealed class App(
         return pipelineInfo;
     }
 
-    [Command("logs failing")]
-    public async Task ShowFailingLogsAsync(
+    [Command("failing")]
+    public async Task ShowFailingAsync(
         string org,
         string project,
         int buildId)
