@@ -248,6 +248,69 @@ internal sealed class PipelinesService(
             definitionId: pipeline.Id.Value,
             cancellationToken: ct);
     }
+
+    public async Task<IReadOnlyList<FailedStageInfo>> GetFailingItemsAsync(
+        OrganizationInfo org,
+        ProjectInfo project,
+        int buildId,
+        CancellationToken ct = default)
+    {
+        var connection = _vssConnectionProvider.GetConnection(org.Uri);
+        var buildsClient = connection.GetClient<BuildHttpClient>();
+
+        var timeline = await buildsClient.GetBuildTimelineAsync(project.Name, buildId, cancellationToken: ct);
+        if (timeline?.Records is null)
+            return [];
+
+        var recordsById = timeline.Records.ToDictionary(r => r.Id);
+
+        var failedStages = timeline.Records
+            .Where(r => r.RecordType == "Stage" && r.Result == TaskResult.Failed)
+            .ToList();
+
+        var failedPhases = timeline.Records
+            .Where(r => r.RecordType == "Phase" && r.Result == TaskResult.Failed)
+            .ToList();
+
+        var failedJobs = timeline.Records
+            .Where(r => r.RecordType == "Job" && r.Result == TaskResult.Failed)
+            .ToList();
+
+        var failedTasks = timeline.Records
+            .Where(r => r.RecordType == "Task" && r.Result == TaskResult.Failed)
+            .ToList();
+
+        List<FailedStageInfo> result = [];
+
+        foreach (var stage in failedStages)
+        {
+            // Jobs can be direct children of Stage, or children of Phase which is a child of Stage
+            var phasesInStage = failedPhases
+                .Where(p => p.ParentId == stage.Id)
+                .Select(p => p.Id)
+                .ToHashSet();
+
+            var jobsInStage = failedJobs
+                .Where(j => j.ParentId == stage.Id || phasesInStage.Contains(j.ParentId ?? Guid.Empty))
+                .ToList();
+
+            List<FailedJobInfo> failedJobInfos = [];
+
+            foreach (var job in jobsInStage)
+            {
+                var tasksInJob = failedTasks
+                    .Where(t => t.ParentId == job.Id)
+                    .Select(t => new FailedTaskInfo(t.Name))
+                    .ToList();
+
+                failedJobInfos.Add(new FailedJobInfo(job.Name, tasksInJob));
+            }
+
+            result.Add(new FailedStageInfo(stage.Name, failedJobInfos));
+        }
+
+        return result;
+    }
 }
 
 internal static class PipelinesServiceExtensions

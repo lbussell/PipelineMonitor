@@ -51,3 +51,9 @@ internal sealed record CommitInfo(string Sha, string Message, string Author, Dat
 internal sealed record StageInfo(string Name, string State, PipelineRunResult Result);
 
 internal sealed record PipelineVariableInfo(string Name, string Value, bool IsSecret, bool AllowOverride);
+
+internal sealed record FailedStageInfo(string Name, IReadOnlyList<FailedJobInfo> FailedJobs);
+
+internal sealed record FailedJobInfo(string Name, IReadOnlyList<FailedTaskInfo> FailedTasks);
+
+internal sealed record FailedTaskInfo(string Name);

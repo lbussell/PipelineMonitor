@@ -313,4 +313,35 @@ internal sealed class App(
 
         return pipelineInfo;
     }
+
+    [Command("logs failing")]
+    public async Task ShowFailingLogsAsync(
+        string org,
+        string project,
+        int buildId)
+    {
+        var orgInfo = new OrganizationInfo(org, new Uri($"https://dev.azure.com/{org}"));
+        var projectInfo = new ProjectInfo(project);
+
+        var failedStages = await _pipelinesService.GetFailingItemsAsync(orgInfo, projectInfo, buildId);
+
+        if (failedStages.Count == 0)
+        {
+            Console.WriteLine("No failures found.");
+            return;
+        }
+
+        foreach (var stage in failedStages)
+        {
+            Console.WriteLine($"Stage: {stage.Name}");
+            foreach (var job in stage.FailedJobs)
+            {
+                Console.WriteLine($"  Job: {job.Name}");
+                foreach (var task in job.FailedTasks)
+                {
+                    Console.WriteLine($"    Task: {task.Name}");
+                }
+            }
+        }
+    }
 }
