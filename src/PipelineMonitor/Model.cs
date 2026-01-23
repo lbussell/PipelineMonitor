@@ -56,4 +56,4 @@ internal sealed record FailedStageInfo(string Name, IReadOnlyList<FailedJobInfo>
 
 internal sealed record FailedJobInfo(string Name, IReadOnlyList<FailedTaskInfo> FailedTasks);
 
-internal sealed record FailedTaskInfo(string Name);
+internal sealed record FailedTaskInfo(string Name, int? LogId);

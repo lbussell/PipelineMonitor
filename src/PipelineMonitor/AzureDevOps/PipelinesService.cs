@@ -300,7 +300,7 @@ internal sealed class PipelinesService(
             {
                 var tasksInJob = failedTasks
                     .Where(t => t.ParentId == job.Id)
-                    .Select(t => new FailedTaskInfo(t.Name))
+                    .Select(t => new FailedTaskInfo(t.Name, t.Log?.Id))
                     .ToList();
 
                 failedJobInfos.Add(new FailedJobInfo(job.Name, tasksInJob));
@@ -310,6 +310,21 @@ internal sealed class PipelinesService(
         }
 
         return result;
+    }
+
+    public async Task<string> GetLogAsync(
+        OrganizationInfo org,
+        ProjectInfo project,
+        int buildId,
+        int logId,
+        CancellationToken ct = default)
+    {
+        var connection = _vssConnectionProvider.GetConnection(org.Uri);
+        var buildsClient = connection.GetClient<BuildHttpClient>();
+
+        using var logStream = await buildsClient.GetBuildLogAsync(project.Name, buildId, logId, cancellationToken: ct);
+        using var reader = new StreamReader(logStream);
+        return await reader.ReadToEndAsync(ct);
     }
 }
 

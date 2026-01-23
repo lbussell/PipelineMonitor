@@ -339,9 +339,31 @@ internal sealed class App(
                 Console.WriteLine($"  Job: {job.Name}");
                 foreach (var task in job.FailedTasks)
                 {
-                    Console.WriteLine($"    Task: {task.Name}");
+                    var logSuffix = task.LogId.HasValue ? $" (log: {task.LogId})" : "";
+                    Console.WriteLine($"    Task: {task.Name}{logSuffix}");
                 }
             }
         }
+    }
+
+    [Command("logs get")]
+    public async Task GetLogAsync(
+        string org,
+        string project,
+        int buildId,
+        int logId)
+    {
+        var orgInfo = new OrganizationInfo(org, new Uri($"https://dev.azure.com/{org}"));
+        var projectInfo = new ProjectInfo(project);
+
+        var logContent = await _pipelinesService.GetLogAsync(orgInfo, projectInfo, buildId, logId);
+
+        var tempDir = Path.Combine(Path.GetTempPath(), "pipelinemon");
+        Directory.CreateDirectory(tempDir);
+
+        var logFile = Path.Combine(tempDir, $"{buildId}-{logId}.log");
+        await File.WriteAllTextAsync(logFile, logContent);
+
+        Console.WriteLine($"Log written to: {logFile}");
     }
 }
