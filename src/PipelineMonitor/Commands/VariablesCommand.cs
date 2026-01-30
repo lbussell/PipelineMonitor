@@ -11,7 +11,7 @@ namespace PipelineMonitor.Commands;
 internal sealed class VariablesCommand(
     IAnsiConsole ansiConsole,
     IInteractionService interactionService,
-    InfoCommand infoCommand,
+    IPipelineInteractionService pipelineInteractionService,
     PipelinesService pipelinesService)
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -22,7 +22,7 @@ internal sealed class VariablesCommand(
     [Command("variables")]
     public async Task ShowVariablesAsync([Argument] string definitionPath)
     {
-        var pipeline = await infoCommand.GetLocalPipelineAsync(definitionPath);
+        var pipeline = await pipelineInteractionService.GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
         var variablesTask = pipelinesService.GetVariablesAsync(pipeline);
@@ -63,7 +63,7 @@ internal sealed class VariablesCommand(
         [Argument] string definitionPath,
         [Argument] string outputFile)
     {
-        var pipeline = await infoCommand.GetLocalPipelineAsync(definitionPath);
+        var pipeline = await pipelineInteractionService.GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
         var variablesTask = pipelinesService.GetVariablesAsync(pipeline);
@@ -81,7 +81,7 @@ internal sealed class VariablesCommand(
         [Argument] string inputFile,
         bool clear = false)
     {
-        var pipeline = await infoCommand.GetLocalPipelineAsync(definitionPath);
+        var pipeline = await pipelineInteractionService.GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
         if (!File.Exists(inputFile))

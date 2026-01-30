@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.Azure.Pipelines.WebApi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -16,11 +17,13 @@ namespace PipelineMonitor.AzureDevOps;
 internal sealed class PipelinesService(
     IVssConnectionProvider vssConnectionProvider,
     IRepoInfoResolver repoInfoResolver,
-    IGitRepoRootProvider gitRepoRootProvider)
+    IGitRepoRootProvider gitRepoRootProvider,
+    ILogger<PipelinesService> logger)
 {
     private readonly IVssConnectionProvider _vssConnectionProvider = vssConnectionProvider;
     private readonly IRepoInfoResolver _repoInfoResolver = repoInfoResolver;
     private readonly IGitRepoRootProvider _gitRepoRootProvider = gitRepoRootProvider;
+    private readonly ILogger<PipelinesService> _logger = logger;
 
     public async Task<PipelineInfo> GetPipelineAsync(OrganizationInfo org, ProjectInfo project, PipelineId id)
     {
@@ -34,11 +37,20 @@ internal sealed class PipelinesService(
     public async IAsyncEnumerable<LocalPipelineInfo> GetLocalPipelinesAsync(
         [EnumeratorCancellation] CancellationToken ct = default)
     {
+        _logger.LogTrace("GetLocalPipelinesAsync called");
+
         var repoInfo = await _repoInfoResolver.ResolveAsync(cancellationToken: ct);
+
+        _logger.LogTrace("RepoInfo resolved - Organization: {Org}, Project: {Project}, Repository: {Repo}",
+            repoInfo.Organization?.Name ?? "(null)",
+            repoInfo.Project?.Name ?? "(null)",
+            repoInfo.Repository?.Name ?? "(null)");
+
         if (repoInfo.Organization is null
             || repoInfo.Project is null
             || repoInfo.Repository is null)
         {
+            _logger.LogTrace("RepoInfo incomplete, yielding no pipelines");
             yield break;
         }
 
@@ -51,18 +63,27 @@ internal sealed class PipelinesService(
             repositoryType: "TfsGit",
             cancellationToken: ct);
 
+        _logger.LogTrace("Found {Count} build definition(s) from Azure DevOps", buildDefinitions.Count);
+
         var repoRoot = await _gitRepoRootProvider.GetRepoRootAsync(ct);
+        var yieldedCount = 0;
 
         foreach (var buildDefinition in buildDefinitions)
         {
             // Ignore non-YAML pipeline definitions for now.
             if (buildDefinition.Process is not YamlProcess yamlBuildProcess)
+            {
+                _logger.LogTrace("Skipping non-YAML definition: {Name}", buildDefinition.Name);
                 continue;
+            }
 
             // Path.Join vs. Path.Combine: YamlProcess.YamlFilename has a leading
             // slash, which causes Path.Combine to ignore the first argument.
             var pipelineFilePath = Path.Join(repoRoot ?? Environment.CurrentDirectory, yamlBuildProcess.YamlFilename);
             var relativePath = Path.GetRelativePath(Environment.CurrentDirectory, pipelineFilePath);
+
+            _logger.LogTrace("Yielding pipeline: {Name}, Path: {Path}", buildDefinition.Name, pipelineFilePath);
+            yieldedCount++;
 
             yield return new LocalPipelineInfo(
                 Name: buildDefinition.Name,
@@ -73,6 +94,8 @@ internal sealed class PipelinesService(
                 Project: repoInfo.Project,
                 Repository: repoInfo.Repository);
         }
+
+        _logger.LogTrace("GetLocalPipelinesAsync completed, yielded {Count} pipeline(s)", yieldedCount);
     }
 
     public async IAsyncEnumerable<PipelineInfo> GetAllPipelinesAsync(OrganizationInfo org, ProjectInfo project)

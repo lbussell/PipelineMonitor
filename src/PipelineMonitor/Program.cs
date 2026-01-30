@@ -18,6 +18,7 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 builder.Services.TryAddPipelinesService();
 builder.Services.TryAddInteractionService();
 builder.Services.TryAddPipelineYamlService();
+builder.Services.TryAddPipelineInteractionService();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddFileLogger(builder.Configuration);

@@ -9,7 +9,7 @@ namespace PipelineMonitor.Commands;
 
 internal sealed class RunsCommand(
     IAnsiConsole ansiConsole,
-    InfoCommand infoCommand,
+    IPipelineInteractionService pipelineInteractionService,
     PipelinesService pipelinesService)
 {
     [Command("runs")]
@@ -17,7 +17,7 @@ internal sealed class RunsCommand(
         [Argument] string definitionPath,
         int top = 10)
     {
-        var pipeline = await infoCommand.GetLocalPipelineAsync(definitionPath);
+        var pipeline = await pipelineInteractionService.GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
         var pipelineRuns = pipelinesService.GetRunsAsync(pipeline, top);

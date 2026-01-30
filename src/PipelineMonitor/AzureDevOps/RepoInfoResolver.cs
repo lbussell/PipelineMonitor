@@ -77,6 +77,8 @@ internal sealed class RepoInfoResolver(
             var startTime = DateTime.Now;
 
             var remoteUrl = await _gitRemoteUrlProvider.GetRemoteUrlAsync(_vstsGitUrlParser.IsAzureDevOpsUrl, cancellationToken);
+            _logger.LogTrace("Git remote URL: {RemoteUrl}", remoteUrl ?? "(null)");
+
             if (!string.IsNullOrEmpty(remoteUrl))
             {
                 var detected = await _vstsGitUrlParser.ParseAsync(remoteUrl, cancellationToken);
@@ -100,6 +102,11 @@ internal sealed class RepoInfoResolver(
             var duration = DateTime.Now - startTime;
             _logger.LogInformation("Detect: URL discovery took {Duration}", duration);
         }
+
+        _logger.LogTrace("ResolveAsync returning - Organization: {Org}, Project: {Project}, Repository: {Repo}",
+            orgInfo?.Name ?? "(null)",
+            projInfo?.Name ?? "(null)",
+            repoInfo?.Name ?? "(null)");
 
         return new ResolvedRepoInfo(orgInfo, projInfo, repoInfo);
     }

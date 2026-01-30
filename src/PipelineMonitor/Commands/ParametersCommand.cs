@@ -11,13 +11,13 @@ namespace PipelineMonitor.Commands;
 internal sealed class ParametersCommand(
     IAnsiConsole ansiConsole,
     IInteractionService interactionService,
-    InfoCommand infoCommand,
+    IPipelineInteractionService pipelineInteractionService,
     IPipelineYamlService pipelineYamlService)
 {
     [Command("parameters")]
     public async Task ShowParametersAsync([Argument] string definitionPath)
     {
-        var pipeline = await infoCommand.GetLocalPipelineAsync(definitionPath);
+        var pipeline = await pipelineInteractionService.GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
         var parseTask = pipelineYamlService.ParseAsync(pipeline.DefinitionFile.FullName);
