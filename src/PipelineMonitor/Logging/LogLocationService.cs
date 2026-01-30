@@ -10,21 +10,25 @@ using NLog.Targets;
 
 namespace PipelineMonitor.Logging;
 
-internal sealed class LogLocationService(IInteractionService interactionService) : IHostedService
+internal sealed class LogLocationService(IInteractionService interactionService) : IHostedLifecycleService
 {
     private readonly IInteractionService _interactionService = interactionService;
 
-    public Task StartAsync(CancellationToken _) => Task.CompletedTask;
-
-    public Task StopAsync(CancellationToken _)
+    public Task StartingAsync(CancellationToken _)
     {
         var fileTarget = LogManager.Configuration?.FindTargetByName<FileTarget>("logfile");
         if (fileTarget is null) return Task.CompletedTask;
         var logEventInfo = new LogEventInfo { TimeStamp = DateTime.Now };
         var fileName = fileTarget.FileName.Render(logEventInfo);
-        _interactionService.DisplaySubtleMessage($"Log file written to '{fileName}'");
+        _interactionService.DisplaySubtleMessage($"Log file: '{fileName}'");
         return Task.CompletedTask;
     }
+
+    public Task StartAsync(CancellationToken _) => Task.CompletedTask;
+    public Task StartedAsync(CancellationToken _) => Task.CompletedTask;
+    public Task StoppingAsync(CancellationToken _) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken _) => Task.CompletedTask;
+    public Task StoppedAsync(CancellationToken _) => Task.CompletedTask;
 }
 
 internal static class LogLocationServiceExtensions
