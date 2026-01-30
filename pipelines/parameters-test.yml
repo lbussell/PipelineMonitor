@@ -1,0 +1,109 @@
+# This example pipeline demonstrates all supported Azure Pipelines parameter types
+# for interactive runtime input with both default and no-default variations.
+
+parameters:
+# String parameters
+- name: stringWithDefault
+  displayName: 'String Parameter (with default)'
+  type: string
+  default: 'default-value'
+
+- name: stringWithoutDefault
+  displayName: 'String Parameter (no default)'
+  type: string
+
+- name: stringWithValues
+  displayName: 'String Parameter (with allowed values)'
+  type: string
+  default: 'dev'
+  values:
+  - dev
+  - staging
+  - prod
+
+# StringList parameters - always require 'values' field
+# Defaults must be a subset of the allowed values
+- name: stringListWithDefault
+  displayName: 'String List Parameter (with default - subset of values)'
+  type: stringList
+  default:
+  - dev
+  - staging
+  values:
+  - dev
+  - staging
+  - prod
+
+- name: stringListWithoutDefault
+  displayName: 'String List Parameter (no default - empty selection)'
+  type: stringList
+  default: []
+  values:
+  - option1
+  - option2
+  - option3
+  - option4
+
+# Number parameters
+- name: numberWithDefault
+  displayName: 'Number Parameter (with default)'
+  type: number
+  default: 42
+
+- name: numberWithoutDefault
+  displayName: 'Number Parameter (no default)'
+  type: number
+
+- name: numberWithValues
+  displayName: 'Number Parameter (with allowed values)'
+  type: number
+  default: 2
+  values:
+  - 1
+  - 2
+  - 4
+  - 8
+  - 16
+
+# Boolean parameters
+- name: booleanWithDefault
+  displayName: 'Boolean Parameter (with default)'
+  type: boolean
+  default: true
+
+- name: booleanWithoutDefault
+  displayName: 'Boolean Parameter (no default)'
+  type: boolean
+
+# Object parameters
+- name: objectWithDefault
+  displayName: 'Object Parameter (with default)'
+  type: object
+  default:
+    key1: value1
+    key2: value2
+    nested:
+      nestedKey: nestedValue
+
+- name: objectWithoutDefault
+  displayName: 'Object Parameter (no default)'
+  type: object
+
+# Pipeline definition using the parameters
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+- job: ExampleJob
+  displayName: 'Example Job Using Parameters'
+  steps:
+  - script: |
+      echo "String with default: ${{ parameters.stringWithDefault }}"
+      echo "String with values: ${{ parameters.stringWithValues }}"
+      echo "Number with default: ${{ parameters.numberWithDefault }}"
+      echo "Number with values: ${{ parameters.numberWithValues }}"
+      echo "Boolean with default: ${{ parameters.booleanWithDefault }}"
+    displayName: 'Display Parameter Values'

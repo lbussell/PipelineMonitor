@@ -309,4 +309,99 @@ public class PipelineYamlServiceTests
         Assert.HasCount(1, result.Parameters);
         Assert.AreEqual("test", result.Parameters[0].Name);
     }
+
+    [TestMethod]
+    public async Task ParseAsync_AllParameterTypesExample_ParsesAllParametersCorrectly()
+    {
+        // This test verifies the parameters-test.yml example file can be parsed
+        var exampleFile = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "..", "..", "..", "..", "..",
+            "pipelines", "parameters-test.yml");
+
+        // Skip if the example file doesn't exist (e.g., in CI)
+        if (!File.Exists(exampleFile))
+        {
+            Assert.Inconclusive($"Example file not found at {exampleFile}");
+            return;
+        }
+
+        var result = await _service.ParseAsync(exampleFile);
+
+        Assert.IsNotNull(result);
+        Assert.IsNotNull(result.Parameters);
+        Assert.IsGreaterThanOrEqualTo(12, result.Parameters.Count, $"Expected at least 12 parameters, got {result.Parameters.Count}");
+
+        // Verify we have parameters of each interactive type (with and without defaults)
+        var parametersByType = result.Parameters.GroupBy(p => p.ParameterType).ToDictionary(g => g.Key, g => g.ToList());
+
+        // Verify String parameters (3 total: with default, without default, with values)
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.String));
+        Assert.IsGreaterThanOrEqualTo(3, parametersByType[PipelineParameterType.String].Count);
+        Assert.IsTrue(parametersByType[PipelineParameterType.String].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.String].Any(p => p.Default == null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.String].Any(p => p.Values != null && p.Values.Count > 0));
+
+        // Verify StringList parameters (2 total: with default, without default)
+        // Both should have 'values' field as per Azure Pipelines spec
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.StringList));
+        Assert.IsGreaterThanOrEqualTo(2, parametersByType[PipelineParameterType.StringList].Count);
+        Assert.IsTrue(parametersByType[PipelineParameterType.StringList].All(p => p.Values != null && p.Values.Count > 0),
+            "All StringList parameters must have a 'values' field");
+
+        // Verify Number parameters (3 total: with default, without default, with values)
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Number));
+        Assert.IsGreaterThanOrEqualTo(3, parametersByType[PipelineParameterType.Number].Count);
+        Assert.IsTrue(parametersByType[PipelineParameterType.Number].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Number].Any(p => p.Default == null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Number].Any(p => p.Values != null && p.Values.Count > 0));
+
+        // Verify Boolean parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Boolean));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Boolean].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Boolean].Any(p => p.Default == null));
+
+        // Verify Object parameters
+        Assert.IsTrue(parametersByType.ContainsKey(PipelineParameterType.Object));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Object].Any(p => p.Default != null));
+        Assert.IsTrue(parametersByType[PipelineParameterType.Object].Any(p => p.Default == null));
+
+        // Verify that non-interactive parameter types are NOT present
+        Assert.IsFalse(parametersByType.ContainsKey(PipelineParameterType.Step),
+            "Step parameters should not be included (not for interactive input)");
+        Assert.IsFalse(parametersByType.ContainsKey(PipelineParameterType.StepList),
+            "StepList parameters should not be included (not for interactive input)");
+        Assert.IsFalse(parametersByType.ContainsKey(PipelineParameterType.Job),
+            "Job parameters should not be included (not for interactive input)");
+        Assert.IsFalse(parametersByType.ContainsKey(PipelineParameterType.JobList),
+            "JobList parameters should not be included (not for interactive input)");
+        Assert.IsFalse(parametersByType.ContainsKey(PipelineParameterType.Deployment),
+            "Deployment parameters should not be included (not for interactive input)");
+        Assert.IsFalse(parametersByType.ContainsKey(PipelineParameterType.DeploymentList),
+            "DeploymentList parameters should not be included (not for interactive input)");
+        Assert.IsFalse(parametersByType.ContainsKey(PipelineParameterType.Stage),
+            "Stage parameters should not be included (not for interactive input)");
+        Assert.IsFalse(parametersByType.ContainsKey(PipelineParameterType.StageList),
+            "StageList parameters should not be included (not for interactive input)");
+
+        // Verify that displayName is set for all parameters
+        Assert.IsTrue(result.Parameters.All(p => !string.IsNullOrEmpty(p.DisplayName)));
+
+        // Verify that the string parameter with values has the values list
+        var stringWithValues = result.Parameters.FirstOrDefault(p => p.Name == "stringWithValues");
+        Assert.IsNotNull(stringWithValues);
+        Assert.IsNotNull(stringWithValues.Values);
+        CollectionAssert.AreEqual(new[] { "dev", "staging", "prod" }, stringWithValues.Values);
+
+        // Verify that the stringList parameters have proper values
+        var stringListWithDefault = result.Parameters.FirstOrDefault(p => p.Name == "stringListWithDefault");
+        Assert.IsNotNull(stringListWithDefault);
+        Assert.IsNotNull(stringListWithDefault.Values);
+        CollectionAssert.AreEqual(new[] { "dev", "staging", "prod" }, stringListWithDefault.Values);
+
+        // Verify that the number parameter with values has the values list
+        var numberWithValues = result.Parameters.FirstOrDefault(p => p.Name == "numberWithValues");
+        Assert.IsNotNull(numberWithValues);
+        Assert.IsNotNull(numberWithValues.Values);
+    }
 }
