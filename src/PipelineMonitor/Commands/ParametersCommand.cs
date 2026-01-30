@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 using ConsoleAppFramework;
-using PipelineMonitor.AzureDevOps;
 using PipelineMonitor.AzureDevOps.Yaml;
 using Spectre.Console;
 using Spectre.Console.Rendering;
@@ -12,14 +11,13 @@ namespace PipelineMonitor.Commands;
 internal sealed class ParametersCommand(
     IAnsiConsole ansiConsole,
     IInteractionService interactionService,
-    PipelinesService pipelinesService,
+    InfoCommand infoCommand,
     IPipelineYamlService pipelineYamlService)
 {
     [Command("parameters")]
     public async Task ShowParametersAsync([Argument] string definitionPath)
     {
-        var pipeline = await CommandHelpers.GetLocalPipelineAsync(
-            definitionPath, interactionService, pipelinesService);
+        var pipeline = await infoCommand.GetLocalPipelineAsync(definitionPath);
         if (pipeline is null) return;
 
         var parseTask = pipelineYamlService.ParseAsync(pipeline.DefinitionFile.FullName);
