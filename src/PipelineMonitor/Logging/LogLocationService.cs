@@ -33,7 +33,7 @@ internal sealed class LogLocationService(IInteractionService interactionService)
 
 internal static class LogLocationServiceExtensions
 {
-    public static ILoggingBuilder AddLogLocationOnExit(this ILoggingBuilder loggingBuilder)
+    public static ILoggingBuilder AddLogLocationOnStart(this ILoggingBuilder loggingBuilder)
     {
         loggingBuilder.Services.AddHostedService<LogLocationService>();
         loggingBuilder.Services.TryAddInteractionService();

@@ -23,10 +23,7 @@ builder.Services.TryAddPipelineResolver();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddFileLogger(builder.Configuration);
-
-#if DEBUG
-builder.Logging.AddLogLocationOnExit();
-#endif
+builder.Logging.AddLogLocationOnStart();
 
 var consoleAppBuilder = builder.ToConsoleAppBuilder();
 consoleAppBuilder.UseFilter<ExceptionHandlingFilter>();
