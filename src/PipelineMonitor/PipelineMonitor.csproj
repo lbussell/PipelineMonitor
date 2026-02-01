@@ -15,6 +15,10 @@
     <ToolCommandName>pipelinemon</ToolCommandName>
   </PropertyGroup>
 
+  <PropertyGroup Label="Build Properties">
+    <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+  </PropertyGroup>
+
   <PropertyGroup Label="Package Metadata">
     <PackageId>PipelineMonitor</PackageId>
 
@@ -90,6 +94,7 @@
     <PackageReference Include="NLog.Extensions.Hosting" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Xdg.Directories" />
     <PackageReference Include="YamlDotNet" />
     <!-- System.Data.SqlClient is a transitive dependency from Microsoft.TeamFoundationServer.Client.
          This direct reference overrides version 4.8.5 to fix CVE-2024-0056 (GHSA-98g6-xh36-x2p7),

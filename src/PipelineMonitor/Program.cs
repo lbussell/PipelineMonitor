@@ -15,6 +15,7 @@ using PipelineMonitor.Logging;
 var builder = Host.CreateApplicationBuilder();
 builder.Configuration.SetBasePath(AppContext.BaseDirectory);
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
+builder.AddXdgAppConfiguration(appNameDirectory: nameof(PipelineMonitor));
 
 builder.Services.TryAddPipelinesService();
 builder.Services.TryAddInteractionService();
