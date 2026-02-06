@@ -4,14 +4,17 @@
 using ConsoleAppFramework;
 using PipelineMonitor.AzureDevOps;
 using PipelineMonitor.AzureDevOps.Yaml;
+using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
 
 internal sealed class ParametersCommand(
+    IAnsiConsole ansiConsole,
     InteractionService interactionService,
     PipelineResolver pipelineResolver,
     PipelineYamlService pipelineYamlService)
 {
+    private readonly IAnsiConsole _ansiConsole = ansiConsole;
     private readonly InteractionService _interactionService = interactionService;
     private readonly PipelineResolver _pipelineResolver = pipelineResolver;
     private readonly PipelineYamlService _pipelineYamlService = pipelineYamlService;
@@ -32,13 +35,13 @@ internal sealed class ParametersCommand(
             return;
         }
 
-        Console.WriteLine("Parameters:");
-        Console.WriteLine();
+        _ansiConsole.WriteLine("Parameters:");
+        _ansiConsole.WriteLine();
 
         foreach (var param in pipelineYaml.Parameters)
         {
             if (!string.IsNullOrWhiteSpace(param.DisplayName))
-                Console.WriteLine($"  {param.DisplayName.Trim()}");
+                _ansiConsole.WriteLine($"  {param.DisplayName.Trim()}");
 
             var defaultText = "";
             if (param.ParameterType is PipelineParameterType.StringList
@@ -51,8 +54,8 @@ internal sealed class ParametersCommand(
                 defaultText = param.Default.ToString() ?? "";
             }
 
-            Console.WriteLine($"  {param.Name}: {defaultText}");
-            Console.WriteLine();
+            _ansiConsole.WriteLine($"  {param.Name}: {defaultText}");
+            _ansiConsole.WriteLine();
         }
     }
 }
