@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.VisualStudio.Services.Account.Client;
 using Microsoft.VisualStudio.Services.Location.Client;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -13,18 +11,7 @@ namespace PipelineMonitor.AzureDevOps;
 /// <summary>
 /// Discovers Azure DevOps organizations that the authenticated user has access to.
 /// </summary>
-internal interface IOrganizationDiscoveryService
-{
-    /// <summary>
-    /// Gets all Azure DevOps organizations the authenticated user has access to.
-    /// </summary>
-    Task<IReadOnlyList<OrganizationInfo>> GetAccessibleOrganizationsAsync(
-        CancellationToken cancellationToken = default);
-}
-
-/// <inheritdoc/>
-internal sealed class OrganizationDiscoveryService(IVssConnectionProvider connectionProvider)
-    : IOrganizationDiscoveryService
+internal sealed class OrganizationDiscoveryService(VssConnectionProvider connectionProvider)
 {
     // Visual Studio Profile Service (VSPS) endpoint.
     // This is a special Azure DevOps endpoint that is not organization-specific
@@ -32,9 +19,11 @@ internal sealed class OrganizationDiscoveryService(IVssConnectionProvider connec
     // organizations the user belongs to.
     private static readonly Uri VspsUri = new("https://app.vssps.visualstudio.com");
 
-    private readonly IVssConnectionProvider _connectionProvider = connectionProvider;
+    private readonly VssConnectionProvider _connectionProvider = connectionProvider;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets all Azure DevOps organizations the authenticated user has access to.
+    /// </summary>
     public async Task<IReadOnlyList<OrganizationInfo>> GetAccessibleOrganizationsAsync(
         CancellationToken cancellationToken = default)
     {
@@ -63,15 +52,4 @@ internal sealed class OrganizationDiscoveryService(IVssConnectionProvider connec
     }
 }
 
-internal static class OrganizationDiscoveryServiceExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddOrganizationDiscoveryService()
-        {
-            services.TryAddSingleton<IOrganizationDiscoveryService, OrganizationDiscoveryService>();
-            services.TryAddVssConnectionProvider();
-            return services;
-        }
-    }
-}
+

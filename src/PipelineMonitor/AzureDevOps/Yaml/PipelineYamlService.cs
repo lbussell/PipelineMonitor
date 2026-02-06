@@ -1,37 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace PipelineMonitor.AzureDevOps.Yaml;
 
-/// <summary>
-/// Service for parsing Azure Pipeline YAML files.
-/// </summary>
-internal interface IPipelineYamlService
-{
-    /// <summary>
-    /// Parses a pipeline YAML file and extracts parameter definitions.
-    /// </summary>
-    /// <param name="filePath">Path to the YAML file.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Parsed pipeline YAML with parameters, or null if parsing fails.</returns>
-    Task<PipelineYaml?> ParseAsync(string filePath, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Parses pipeline YAML content from a string.
-    /// </summary>
-    /// <param name="yamlContent">YAML content as a string.</param>
-    /// <returns>Parsed pipeline YAML with parameters, or null if parsing fails.</returns>
-    PipelineYaml? Parse(string yamlContent);
-}
-
-internal sealed class PipelineYamlService(ILogger<PipelineYamlService> logger) : IPipelineYamlService
+internal sealed class PipelineYamlService(ILogger<PipelineYamlService> logger)
 {
     private readonly ILogger<PipelineYamlService> _logger = logger;
 
@@ -80,14 +56,4 @@ internal sealed class PipelineYamlService(ILogger<PipelineYamlService> logger) :
     }
 }
 
-internal static class PipelineYamlServiceExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddPipelineYamlService()
-        {
-            services.TryAddSingleton<IPipelineYamlService, PipelineYamlService>();
-            return services;
-        }
-    }
-}
+

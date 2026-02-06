@@ -3,28 +3,42 @@
 
 using ConsoleAppFramework;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
 using PipelineMonitor;
+using PipelineMonitor.Authentication;
 using PipelineMonitor.AzureDevOps;
 using PipelineMonitor.AzureDevOps.Yaml;
 using PipelineMonitor.Commands;
 using PipelineMonitor.Filters;
+using PipelineMonitor.Git;
 using PipelineMonitor.Logging;
+using Spectre.Console;
 
 var builder = Host.CreateApplicationBuilder();
 builder.Configuration.SetBasePath(AppContext.BaseDirectory);
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
 builder.AddXdgAppConfiguration(appNameDirectory: nameof(PipelineMonitor));
 
-builder.Services.TryAddPipelinesService();
-builder.Services.TryAddInteractionService();
-builder.Services.TryAddPipelineYamlService();
-builder.Services.TryAddPipelineResolver();
+builder.Services.TryAddSingleton<IProcessRunner, CliWrapProcessRunner>();
+builder.Services.TryAddSingleton<GitService>();
+builder.Services.TryAddSingleton<AzureCredentialProvider>();
+builder.Services.TryAddSingleton<VssConnectionProvider>();
+builder.Services.TryAddSingleton<VstsGitUrlParser>();
+builder.Services.TryAddSingleton<RepoInfoResolver>();
+builder.Services.TryAddSingleton<OrganizationDiscoveryService>();
+builder.Services.TryAddSingleton<PipelinesService>();
+builder.Services.TryAddSingleton(_ => AnsiConsole.Console);
+builder.Services.TryAddSingleton<InteractionService>();
+builder.Services.TryAddSingleton<PipelineYamlService>();
+builder.Services.TryAddSingleton<PipelineResolver>();
 
 builder.Logging.ClearProviders();
-builder.Logging.AddFileLogger(builder.Configuration);
-builder.Logging.AddLogLocationOnStart();
+builder.Logging.AddNLog(builder.Configuration);
+builder.Services.AddHostedService<LogLocationService>();
 
 var consoleAppBuilder = builder.ToConsoleAppBuilder();
 consoleAppBuilder.UseFilter<ExceptionHandlingFilter>();

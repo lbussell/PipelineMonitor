@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace PipelineMonitor.Git;
@@ -12,7 +10,7 @@ namespace PipelineMonitor.Git;
 /// </summary>
 internal sealed class GitService(
     IProcessRunner processRunner,
-    ILogger<GitService> logger) : IGitRemoteUrlProvider, IGitRepoRootProvider
+    ILogger<GitService> logger)
 {
     private const string GitExecutable = "git";
     private const string OriginPushKey = "origin(push)";
@@ -21,7 +19,6 @@ internal sealed class GitService(
     private readonly ILogger<GitService> _logger = logger;
     private Dictionary<string, string>? _cachedRemotes;
 
-    /// <inheritdoc/>
     public async Task<IReadOnlyDictionary<string, string>?> GetRemotesAsync(CancellationToken cancellationToken = default)
     {
         if (_cachedRemotes is not null)
@@ -62,7 +59,6 @@ internal sealed class GitService(
         }
     }
 
-    /// <inheritdoc/>
     public async Task<string?> GetRemoteUrlAsync(
         Func<string, bool>? validationFunction = null,
         CancellationToken cancellationToken = default)
@@ -97,7 +93,6 @@ internal sealed class GitService(
         return null;
     }
 
-    /// <inheritdoc/>
     public async Task<string?> GetRepoRootAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -276,17 +271,4 @@ internal sealed record WorkingTreeStatus(int Staged, int Modified, int Untracked
     public bool IsClean => Staged == 0 && Modified == 0 && Untracked == 0;
 }
 
-internal static class GitServiceExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddGitService()
-        {
-            services.TryAddProcessRunner();
-            services.TryAddSingleton<GitService>();
-            services.TryAddSingleton<IGitRemoteUrlProvider>(sp => sp.GetRequiredService<GitService>());
-            services.TryAddSingleton<IGitRepoRootProvider>(sp => sp.GetRequiredService<GitService>());
-            return services;
-        }
-    }
-}
+

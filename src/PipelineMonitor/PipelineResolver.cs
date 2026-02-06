@@ -1,24 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using PipelineMonitor.AzureDevOps;
 
 namespace PipelineMonitor;
 
-internal interface IPipelineResolver
-{
-    Task<IReadOnlyList<LocalPipelineInfo>> GetLocalPipelinesAsync();
-    Task<LocalPipelineInfo> GetLocalPipelineAsync(string definitionPath);
-}
-
 internal sealed class PipelineResolver(
     PipelinesService pipelinesService,
-    IInteractionService interactionService) : IPipelineResolver
+    InteractionService interactionService)
 {
     private readonly PipelinesService _pipelinesService = pipelinesService;
-    private readonly IInteractionService _interactionService = interactionService;
+    private readonly InteractionService _interactionService = interactionService;
 
     public async Task<IReadOnlyList<LocalPipelineInfo>> GetLocalPipelinesAsync()
     {
@@ -61,14 +53,4 @@ internal sealed class PipelineResolver(
     }
 }
 
-internal static class PipelineResolverExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddPipelineResolver()
-        {
-            services.TryAddSingleton<IPipelineResolver, PipelineResolver>();
-            return services;
-        }
-    }
-}
+

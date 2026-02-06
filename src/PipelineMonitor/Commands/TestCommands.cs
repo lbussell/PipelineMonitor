@@ -9,13 +9,13 @@ using PipelineMonitor.Git;
 namespace PipelineMonitor.Commands;
 
 internal sealed class TestCommands(
-    IInteractionService interactionService,
+    InteractionService interactionService,
     GitService gitService,
-    IVstsGitUrlParser vstsGitUrlParser)
+    VstsGitUrlParser vstsGitUrlParser)
 {
-    private readonly IInteractionService _interactionService = interactionService;
+    private readonly InteractionService _interactionService = interactionService;
     private readonly GitService _gitService = gitService;
-    private readonly IVstsGitUrlParser _vstsGitUrlParser = vstsGitUrlParser;
+    private readonly VstsGitUrlParser _vstsGitUrlParser = vstsGitUrlParser;
 
     [Command("hello")]
     public async Task GreetUserAsync(string? name = null)
