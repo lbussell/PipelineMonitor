@@ -36,9 +36,14 @@ builder.Services.TryAddSingleton<InteractionService>();
 builder.Services.TryAddSingleton<PipelineYamlService>();
 builder.Services.TryAddSingleton<PipelineResolver>();
 
+// Add file logging
 builder.Logging.ClearProviders();
 builder.Logging.AddNLog(builder.Configuration);
+
+// Print log file location during development
+#if DEBUG
 builder.Services.AddHostedService<LogLocationService>();
+#endif
 
 var consoleAppBuilder = builder.ToConsoleAppBuilder();
 consoleAppBuilder.UseFilter<ExceptionHandlingFilter>();

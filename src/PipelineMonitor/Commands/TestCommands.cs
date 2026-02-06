@@ -5,14 +5,17 @@ using System.Text;
 using ConsoleAppFramework;
 using PipelineMonitor.AzureDevOps;
 using PipelineMonitor.Git;
+using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
 
 internal sealed class TestCommands(
+    IAnsiConsole ansiConsole,
     InteractionService interactionService,
     GitService gitService,
     VstsGitUrlParser vstsGitUrlParser)
 {
+    private readonly IAnsiConsole _ansiConsole = ansiConsole;
     private readonly InteractionService _interactionService = interactionService;
     private readonly GitService _gitService = gitService;
     private readonly VstsGitUrlParser _vstsGitUrlParser = vstsGitUrlParser;
@@ -21,14 +24,14 @@ internal sealed class TestCommands(
     public async Task GreetUserAsync(string? name = null)
     {
         name ??= await _interactionService.PromptAsync<string>("What is your name?");
-        Console.WriteLine($"Hello, {name}!");
+        _ansiConsole.WriteLine($"Hello, {name}!");
     }
 
     [Command("confirm")]
     public async Task ConfirmActionAsync()
     {
         var ok = await _interactionService.ConfirmAsync("All good?");
-        Console.WriteLine(ok ? "OK!" : "Not OK!");
+        _ansiConsole.WriteLine(ok ? "OK!" : "Not OK!");
     }
 
     [Command("tag")]
@@ -37,7 +40,7 @@ internal sealed class TestCommands(
         var tag = await _interactionService.SelectAsync(
             prompt: "Enter a tag for the pipeline:",
             suggestions: ["foo", "bar", "baz"]);
-        Console.WriteLine($"Selected tag: {tag}");
+        _ansiConsole.WriteLine($"Selected tag: {tag}");
     }
 
     [Command("gitstatus")]
@@ -46,20 +49,20 @@ internal sealed class TestCommands(
         var branch = await _gitService.GetCurrentBranchAsync();
         if (branch is null)
         {
-            Console.WriteLine("Not in a git repository");
+            _ansiConsole.WriteLine("Not in a git repository");
             return;
         }
 
-        Console.WriteLine($"Branch: {branch}");
+        _ansiConsole.WriteLine($"Branch: {branch}");
 
         var upstream = await _gitService.GetUpstreamBranchAsync();
         if (upstream is null)
         {
-            Console.WriteLine("Upstream: (not set)");
+            _ansiConsole.WriteLine("Upstream: (not set)");
         }
         else
         {
-            Console.WriteLine($"Upstream: {upstream}");
+            _ansiConsole.WriteLine($"Upstream: {upstream}");
 
             // Get the remote name from upstream (e.g., "origin/main" -> "origin")
             var remoteName = upstream.Split('/')[0];
@@ -67,9 +70,9 @@ internal sealed class TestCommands(
 
             if (remoteUrl is not null)
             {
-                Console.WriteLine($"Remote: {remoteUrl}");
+                _ansiConsole.WriteLine($"Remote: {remoteUrl}");
                 var isAzureDevOps = _vstsGitUrlParser.IsAzureDevOpsUrl(remoteUrl);
-                Console.WriteLine($"Azure DevOps: {(isAzureDevOps ? "Yes" : "No")}");
+                _ansiConsole.WriteLine($"Azure DevOps: {(isAzureDevOps ? "Yes" : "No")}");
             }
 
             var aheadBehind = await _gitService.GetAheadBehindAsync();
@@ -77,16 +80,16 @@ internal sealed class TestCommands(
             {
                 var (ahead, behind) = aheadBehind.Value;
                 if (ahead == 0 && behind == 0)
-                    Console.WriteLine("Status: Up to date");
+                    _ansiConsole.WriteLine("Status: Up to date");
                 else
-                    Console.WriteLine($"Status: {ahead} ahead, {behind} behind");
+                    _ansiConsole.WriteLine($"Status: {ahead} ahead, {behind} behind");
             }
         }
 
         var workingTree = await _gitService.GetWorkingTreeStatusAsync();
         if (workingTree.IsClean)
         {
-            Console.WriteLine("Working tree: Clean");
+            _ansiConsole.WriteLine("Working tree: Clean");
         }
         else
         {
@@ -94,7 +97,7 @@ internal sealed class TestCommands(
             if (workingTree.Staged > 0) parts.Add($"{workingTree.Staged} staged");
             if (workingTree.Modified > 0) parts.Add($"{workingTree.Modified} modified");
             if (workingTree.Untracked > 0) parts.Add($"{workingTree.Untracked} untracked");
-            Console.WriteLine($"Working tree: {string.Join(", ", parts)}");
+            _ansiConsole.WriteLine($"Working tree: {string.Join(", ", parts)}");
         }
     }
 
@@ -104,11 +107,11 @@ internal sealed class TestCommands(
         var branch = await _gitService.GetCurrentBranchAsync();
         if (branch is null)
         {
-            Console.WriteLine("Not in a git repository");
+            _ansiConsole.WriteLine("Not in a git repository");
             return;
         }
 
-        Console.WriteLine($"Branch: {branch}");
+        _ansiConsole.WriteLine($"Branch: {branch}");
 
         // Check for uncommitted changes
         var workingTree = await _gitService.GetWorkingTreeStatusAsync();
@@ -120,25 +123,25 @@ internal sealed class TestCommands(
             if (workingTree.Staged > 0) statusParts.Add($"{workingTree.Staged} staged");
             if (workingTree.Modified > 0) statusParts.Add($"{workingTree.Modified} modified");
             if (workingTree.Untracked > 0) statusParts.Add($"{workingTree.Untracked} untracked");
-            Console.WriteLine($"Working tree: {string.Join(", ", statusParts)}");
+            _ansiConsole.WriteLine($"Working tree: {string.Join(", ", statusParts)}");
 
             var shouldCommit = await _interactionService.ConfirmAsync("Commit changes?");
             if (!shouldCommit)
             {
-                Console.WriteLine("Operation cancelled.");
+                _ansiConsole.WriteLine("Operation cancelled.");
                 return;
             }
 
             commitMessage = await _interactionService.PromptAsync<string>("Commit message");
             if (string.IsNullOrWhiteSpace(commitMessage))
             {
-                Console.WriteLine("Commit message cannot be empty. Operation cancelled.");
+                _ansiConsole.WriteLine("Commit message cannot be empty. Operation cancelled.");
                 return;
             }
         }
         else
         {
-            Console.WriteLine("Working tree: Clean");
+            _ansiConsole.WriteLine("Working tree: Clean");
         }
 
         // Determine push destination - goal is to sync with Azure DevOps
@@ -165,14 +168,14 @@ internal sealed class TestCommands(
                 {
                     if (commitsAhead == 0 && behind == 0 && commitMessage is null)
                     {
-                        Console.WriteLine($"Up to date with {upstream}");
-                        Console.WriteLine("Nothing to do.");
+                        _ansiConsole.WriteLine($"Up to date with {upstream}");
+                        _ansiConsole.WriteLine("Nothing to do.");
                         return;
                     }
 
                     if (behind > 0)
                     {
-                        Console.WriteLine($"Warning: {behind} commit(s) behind {upstream}. Consider pulling first.");
+                        _ansiConsole.WriteLine($"Warning: {behind} commit(s) behind {upstream}. Consider pulling first.");
                     }
                 }
             }
@@ -195,9 +198,9 @@ internal sealed class TestCommands(
                 var adoRemote = await _gitService.GetAzureDevOpsRemoteNameAsync(_vstsGitUrlParser.IsAzureDevOpsUrl);
                 if (adoRemote is not null)
                 {
-                    Console.WriteLine($"Upstream ({upstream}) is not Azure DevOps.");
-                    Console.WriteLine($"Found Azure DevOps remote: {adoRemote}");
-                    Console.WriteLine("You'll be prompted for a branch name, then shown a final confirmation before any push.");
+                    _ansiConsole.WriteLine($"Upstream ({upstream}) is not Azure DevOps.");
+                    _ansiConsole.WriteLine($"Found Azure DevOps remote: {adoRemote}");
+                    _ansiConsole.WriteLine("You'll be prompted for a branch name, then shown a final confirmation before any push.");
                     var shouldPush = await _interactionService.ConfirmAsync("Set up push to Azure DevOps?");
                     if (shouldPush)
                     {
@@ -211,12 +214,12 @@ internal sealed class TestCommands(
         else
         {
             // No upstream set - must push to Azure DevOps
-            Console.WriteLine("No upstream branch set.");
+            _ansiConsole.WriteLine("No upstream branch set.");
             var adoRemote = await _gitService.GetAzureDevOpsRemoteNameAsync(_vstsGitUrlParser.IsAzureDevOpsUrl);
             if (adoRemote is not null)
             {
-                Console.WriteLine($"Found Azure DevOps remote: {adoRemote}");
-                Console.WriteLine("You'll be prompted for a branch name, then shown a final confirmation before any push.");
+                _ansiConsole.WriteLine($"Found Azure DevOps remote: {adoRemote}");
+                _ansiConsole.WriteLine("You'll be prompted for a branch name, then shown a final confirmation before any push.");
                 var shouldPush = await _interactionService.ConfirmAsync("Set up push to Azure DevOps?");
                 if (shouldPush)
                 {
@@ -227,7 +230,7 @@ internal sealed class TestCommands(
             }
             else
             {
-                Console.WriteLine("No Azure DevOps remote found.");
+                _ansiConsole.WriteLine("No Azure DevOps remote found.");
                 return;
             }
         }
@@ -235,7 +238,7 @@ internal sealed class TestCommands(
         // If nothing to do
         if (commitMessage is null && pushDestination is null)
         {
-            Console.WriteLine("Nothing to do.");
+            _ansiConsole.WriteLine("Nothing to do.");
             return;
         }
 
@@ -267,25 +270,25 @@ internal sealed class TestCommands(
         }
         operations.AppendLine();
 
-        Console.Write(operations.ToString());
+        _ansiConsole.Write(operations.ToString());
 
         var proceed = await _interactionService.ConfirmAsync("Proceed?");
         if (!proceed)
         {
-            Console.WriteLine("Operation cancelled. No changes were made.");
+            _ansiConsole.WriteLine("Operation cancelled. No changes were made.");
             return;
         }
 
         // Execute operations
-        Console.WriteLine();
+        _ansiConsole.WriteLine();
 
         if (commitMessage is not null)
         {
             await _gitService.StageAllAsync();
-            Console.WriteLine("Staged all changes.");
+            _ansiConsole.WriteLine("Staged all changes.");
 
             var commitOutput = await _gitService.CommitAsync(commitMessage);
-            Console.WriteLine(commitOutput);
+            _ansiConsole.WriteLine(commitOutput);
         }
 
         if (pushDestination is not null)
@@ -302,9 +305,9 @@ internal sealed class TestCommands(
 
             if (!string.IsNullOrWhiteSpace(pushOutput))
             {
-                Console.WriteLine(pushOutput);
+                _ansiConsole.WriteLine(pushOutput);
             }
-            Console.WriteLine($"Pushed to {pushDestination}.");
+            _ansiConsole.WriteLine($"Pushed to {pushDestination}.");
         }
     }
 }

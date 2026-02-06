@@ -15,16 +15,16 @@ internal sealed class InteractionService(IAnsiConsole ansiConsole)
 
     public async Task<T> ShowLoadingAsync<T>(string statusText, Func<Task<T>> action)
     {
-        Console.Write(statusText);
+        _ansiConsole.Write(statusText);
         try
         {
             var result = await action();
-            Console.WriteLine(" Done.");
+            _ansiConsole.WriteLine(" Done.");
             return result;
         }
         catch
         {
-            Console.WriteLine();
+            _ansiConsole.WriteLine();
             throw;
         }
     }

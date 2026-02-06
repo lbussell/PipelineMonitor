@@ -4,14 +4,17 @@
 using System.Text.Json;
 using ConsoleAppFramework;
 using PipelineMonitor.AzureDevOps;
+using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
 
 internal sealed class VariablesCommand(
+    IAnsiConsole ansiConsole,
     InteractionService interactionService,
     PipelineResolver pipelineResolver,
     PipelinesService pipelinesService)
 {
+    private readonly IAnsiConsole _ansiConsole = ansiConsole;
     private readonly InteractionService _interactionService = interactionService;
     private readonly PipelineResolver _pipelineResolver = pipelineResolver;
     private readonly PipelinesService _pipelinesService = pipelinesService;
@@ -42,7 +45,7 @@ internal sealed class VariablesCommand(
                 new[] { variable.IsSecret ? "secret" : null, variable.AllowOverride ? "allow override" : null }
                     .Where(f => f is not null));
             var flagsDisplay = flags.Length > 0 ? $" ({flags})" : "";
-            Console.WriteLine($"  {variable.Name}: {value}{flagsDisplay}");
+            _ansiConsole.WriteLine($"  {variable.Name}: {value}{flagsDisplay}");
         }
     }
 

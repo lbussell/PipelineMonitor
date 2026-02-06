@@ -3,13 +3,16 @@
 
 using ConsoleAppFramework;
 using PipelineMonitor.AzureDevOps;
+using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
 
 internal sealed class RunsCommand(
+    IAnsiConsole ansiConsole,
     PipelineResolver pipelineResolver,
     PipelinesService pipelinesService)
 {
+    private readonly IAnsiConsole _ansiConsole = ansiConsole;
     private readonly PipelineResolver _pipelineResolver = pipelineResolver;
     private readonly PipelinesService _pipelinesService = pipelinesService;
 
@@ -33,7 +36,7 @@ internal sealed class RunsCommand(
             };
 
             var commitMessage = run.Commit?.Message ?? "";
-            Console.WriteLine($"[{resultSymbol}] {run.Name} - {commitMessage} ({run.State})");
+            _ansiConsole.WriteLine($"[{resultSymbol}] {run.Name} - {commitMessage} ({run.State})");
         }
     }
 }

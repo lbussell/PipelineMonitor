@@ -3,13 +3,16 @@
 
 using ConsoleAppFramework;
 using PipelineMonitor.AzureDevOps;
+using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
 
 internal sealed class DiscoverCommand(
+    IAnsiConsole ansiConsole,
     InteractionService interactionService,
     PipelinesService pipelinesService)
 {
+    private readonly IAnsiConsole _ansiConsole = ansiConsole;
     private readonly InteractionService _interactionService = interactionService;
     private readonly PipelinesService _pipelinesService = pipelinesService;
 
@@ -26,10 +29,8 @@ internal sealed class DiscoverCommand(
 
         foreach (var pipeline in pipelines)
         {
-            Console.WriteLine();
-            Console.WriteLine($"{pipeline.Name}");
-            Console.WriteLine($"File: {pipeline.RelativePath}");
-            Console.WriteLine($"ID: {pipeline.Id.Value}");
+            _ansiConsole.WriteLine();
+            _ansiConsole.Display(pipeline);
         }
     }
 }
