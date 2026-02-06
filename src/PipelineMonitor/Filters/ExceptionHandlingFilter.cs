@@ -49,7 +49,9 @@ internal sealed class ExceptionHandlingFilter(
             ansiConsole.WriteLine();
 
             var issueUrl = BuildGitHubIssueUrl(context, ex);
-            ansiConsole.MarkupLineInterpolated($"[link={issueUrl}]Please click here to report this issue on GitHub.[/]");
+            ansiConsole.MarkupLineInterpolated(
+                $"[link={issueUrl}]Please click here to report this issue on GitHub.[/]"
+            );
             ansiConsole.WriteLine("The link will automatically fill in the exception details for you.");
         }
         catch
@@ -77,7 +79,8 @@ internal sealed class ExceptionHandlingFilter(
             ```
             {ex}
             ```
-            """);
+            """
+        );
 
         return $"{GitHubRepoUrl}/issues/new?title={title}&body={body}&labels=bug";
     }

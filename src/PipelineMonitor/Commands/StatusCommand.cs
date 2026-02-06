@@ -50,13 +50,14 @@ internal sealed class StatusCommand(
         var completedStages = timeline.Stages.Count(s => s.State == TimelineRecordStatus.Completed);
         var totalStages = timeline.Stages.Count;
 
-        var overallState = timeline.Stages.Any(s => s.State == TimelineRecordStatus.InProgress)
-            ? "Running"
-            : timeline.Stages.All(s => s.State == TimelineRecordStatus.Completed)
-                ? GetOverallResult(timeline)
-                : "Pending";
+        var overallState =
+            timeline.Stages.Any(s => s.State == TimelineRecordStatus.InProgress) ? "Running"
+            : timeline.Stages.All(s => s.State == TimelineRecordStatus.Completed) ? GetOverallResult(timeline)
+            : "Pending";
 
-        _ansiConsole.MarkupLineInterpolated($"[bold]{overallState}[/] - {completedStages}/{totalStages} Stages complete");
+        _ansiConsole.MarkupLineInterpolated(
+            $"[bold]{overallState}[/] - {completedStages}/{totalStages} Stages complete"
+        );
         _ansiConsole.WriteLine();
 
         foreach (var stageInfo in timeline.Stages)
@@ -77,8 +78,9 @@ internal sealed class StatusCommand(
 
     private void DisplayStage(BuildTimelineInfo timeline, string stageName)
     {
-        var stageInfo = timeline.Stages.FirstOrDefault(
-            s => s.Name.Equals(stageName, StringComparison.OrdinalIgnoreCase));
+        var stageInfo = timeline.Stages.FirstOrDefault(s =>
+            s.Name.Equals(stageName, StringComparison.OrdinalIgnoreCase)
+        );
 
         if (stageInfo is null)
         {
@@ -90,7 +92,9 @@ internal sealed class StatusCommand(
         var completedJobs = stageInfo.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
         var totalJobs = stageInfo.Jobs.Count;
 
-        _ansiConsole.MarkupLineInterpolated($"[bold]{stageInfo.Name}[/] - {stateLabel} (Jobs: {completedJobs}/{totalJobs} complete)");
+        _ansiConsole.MarkupLineInterpolated(
+            $"[bold]{stageInfo.Name}[/] - {stateLabel} (Jobs: {completedJobs}/{totalJobs} complete)"
+        );
         _ansiConsole.WriteLine();
 
         foreach (var jobInfo in stageInfo.Jobs)
@@ -104,8 +108,9 @@ internal sealed class StatusCommand(
 
     private void DisplayJob(BuildTimelineInfo timeline, string stageName, string jobName)
     {
-        var stageInfo = timeline.Stages.FirstOrDefault(
-            s => s.Name.Equals(stageName, StringComparison.OrdinalIgnoreCase));
+        var stageInfo = timeline.Stages.FirstOrDefault(s =>
+            s.Name.Equals(stageName, StringComparison.OrdinalIgnoreCase)
+        );
 
         if (stageInfo is null)
         {
@@ -113,20 +118,23 @@ internal sealed class StatusCommand(
             throw new UserFacingException($"Stage '{stageName}' not found. Available stages: {available}");
         }
 
-        var jobInfo = stageInfo.Jobs.FirstOrDefault(
-            j => j.Name.Equals(jobName, StringComparison.OrdinalIgnoreCase));
+        var jobInfo = stageInfo.Jobs.FirstOrDefault(j => j.Name.Equals(jobName, StringComparison.OrdinalIgnoreCase));
 
         if (jobInfo is null)
         {
             var available = string.Join(", ", stageInfo.Jobs.Select(j => j.Name));
-            throw new UserFacingException($"Job '{jobName}' not found in stage '{stageName}'. Available jobs: {available}");
+            throw new UserFacingException(
+                $"Job '{jobName}' not found in stage '{stageName}'. Available jobs: {available}"
+            );
         }
 
         var jobState = GetStateLabel(jobInfo.State, jobInfo.Result);
         var completedTasks = jobInfo.Tasks.Count(t => t.State == TimelineRecordStatus.Completed);
         var totalTasks = jobInfo.Tasks.Count;
 
-        _ansiConsole.MarkupLineInterpolated($"[bold]{stageInfo.Name}[/] > [bold]{jobInfo.Name}[/] - {jobState} (Tasks: {completedTasks}/{totalTasks} complete)");
+        _ansiConsole.MarkupLineInterpolated(
+            $"[bold]{stageInfo.Name}[/] > [bold]{jobInfo.Name}[/] - {jobState} (Tasks: {completedTasks}/{totalTasks} complete)"
+        );
         _ansiConsole.WriteLine();
 
         foreach (var taskInfo in jobInfo.Tasks)
@@ -158,9 +166,7 @@ internal sealed class StatusCommand(
     /// </summary>
     private static string GetOverallResult(BuildTimelineInfo timeline)
     {
-        var worstResult = timeline.Stages
-            .Select(s => s.Result)
-            .Aggregate(PipelineRunResult.None, WorstOf);
+        var worstResult = timeline.Stages.Select(s => s.Result).Aggregate(PipelineRunResult.None, WorstOf);
 
         return worstResult switch
         {
@@ -186,5 +192,4 @@ internal sealed class StatusCommand(
             PipelineRunResult.Failed => 4,
             _ => -1,
         };
-
 }

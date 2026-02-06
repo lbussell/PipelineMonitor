@@ -9,9 +9,7 @@ namespace PipelineMonitor.AzureDevOps;
 /// <summary>
 /// Hierarchical representation of a build timeline parsed from flat <see cref="TimelineRecord"/> entries.
 /// </summary>
-internal sealed record BuildTimelineInfo(
-    ImmutableList<TimelineStageInfo> Stages
-)
+internal sealed record BuildTimelineInfo(ImmutableList<TimelineStageInfo> Stages)
 {
     /// <summary>
     /// Parses a flat list of <see cref="TimelineRecord"/> entries into a hierarchical timeline.
@@ -34,9 +32,7 @@ internal sealed record BuildTimelineInfo(
         return new BuildTimelineInfo(stages);
     }
 
-    private static TimelineStageInfo BuildStage(
-        TimelineRecord stage,
-        Dictionary<Guid, List<TimelineRecord>> childrenOf)
+    private static TimelineStageInfo BuildStage(TimelineRecord stage, Dictionary<Guid, List<TimelineRecord>> childrenOf)
     {
         // Jobs may be nested under a Phase record which is under the Stage.
         // Collect all Job records that are descendants of this stage.
@@ -50,12 +46,11 @@ internal sealed record BuildTimelineInfo(
             State: ToState(stage.State),
             Result: ToResult(stage.Result),
             Order: stage.Order,
-            Jobs: jobs);
+            Jobs: jobs
+        );
     }
 
-    private static TimelineJobInfo BuildJob(
-        TimelineRecord job,
-        Dictionary<Guid, List<TimelineRecord>> childrenOf)
+    private static TimelineJobInfo BuildJob(TimelineRecord job, Dictionary<Guid, List<TimelineRecord>> childrenOf)
     {
         var tasks = GetDescendants(job.Id, childrenOf, "Task")
             .OrderBy(r => r.Order)
@@ -63,7 +58,8 @@ internal sealed record BuildTimelineInfo(
                 Name: task.Name,
                 State: ToState(task.State),
                 Result: ToResult(task.Result),
-                Order: task.Order))
+                Order: task.Order
+            ))
             .ToImmutableList();
 
         return new TimelineJobInfo(
@@ -71,7 +67,8 @@ internal sealed record BuildTimelineInfo(
             State: ToState(job.State),
             Result: ToResult(job.Result),
             Order: job.Order,
-            Tasks: tasks);
+            Tasks: tasks
+        );
     }
 
     /// <summary>
@@ -80,7 +77,8 @@ internal sealed record BuildTimelineInfo(
     private static IEnumerable<TimelineRecord> GetDescendants(
         Guid parentId,
         Dictionary<Guid, List<TimelineRecord>> childrenOf,
-        string recordType)
+        string recordType
+    )
     {
         if (!childrenOf.TryGetValue(parentId, out var children))
             yield break;
@@ -143,9 +141,4 @@ internal sealed record TimelineJobInfo(
     ImmutableList<TimelineTaskInfo> Tasks
 );
 
-internal sealed record TimelineTaskInfo(
-    string Name,
-    TimelineRecordStatus State,
-    PipelineRunResult Result,
-    int? Order
-);
+internal sealed record TimelineTaskInfo(string Name, TimelineRecordStatus State, PipelineRunResult Result, int? Order);

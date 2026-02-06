@@ -101,7 +101,13 @@ internal sealed class RunCommand(
         QueuedPipelineRunInfo runInfo;
         try
         {
-            runInfo = await _pipelinesService.RunPipelineAsync(pipeline, refName, templateParameters, variables, skipStage);
+            runInfo = await _pipelinesService.RunPipelineAsync(
+                pipeline,
+                refName,
+                templateParameters,
+                variables,
+                skipStage
+            );
         }
         catch (Exception ex)
         {
