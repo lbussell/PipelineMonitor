@@ -1,0 +1,6 @@
+**/*.csproj
+**/*.fsproj
+**/*.vbproj
+**/*.props
+**/*.targets
+**/*.slnx

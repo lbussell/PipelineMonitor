@@ -401,11 +401,7 @@ internal sealed class PipelinesService(
         var connection = _vssConnectionProvider.GetConnection(org.Uri);
         var buildsClient = connection.GetClient<BuildHttpClient>();
 
-        var build = await buildsClient.GetBuildAsync(
-            project: project.Name,
-            buildId: buildId,
-            cancellationToken: ct
-        );
+        var build = await buildsClient.GetBuildAsync(project: project.Name, buildId: buildId, cancellationToken: ct);
 
         if (build.Status == BuildStatus.Completed)
             throw new UserFacingException($"Build {buildId} has already completed with result: {build.Result}.");

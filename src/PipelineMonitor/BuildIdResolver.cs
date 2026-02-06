@@ -23,12 +23,14 @@ internal sealed class BuildIdResolver(RepoInfoResolver repoInfoResolver)
 
         if (!int.TryParse(buildIdOrUrl, out var id))
             throw new UserFacingException(
-                $"Invalid argument '{buildIdOrUrl}'. Provide a numeric build ID or an Azure DevOps build results URL.");
+                $"Invalid argument '{buildIdOrUrl}'. Provide a numeric build ID or an Azure DevOps build results URL."
+            );
 
         var repoInfo = await _repoInfoResolver.ResolveAsync();
         return repoInfo.Organization is null || repoInfo.Project is null
             ? throw new UserFacingException(
-                "Could not detect Azure DevOps organization/project from Git remotes. Use a full build URL instead.")
+                "Could not detect Azure DevOps organization/project from Git remotes. Use a full build URL instead."
+            )
             : (repoInfo.Organization, repoInfo.Project, id);
     }
 
@@ -40,7 +42,8 @@ internal sealed class BuildIdResolver(RepoInfoResolver repoInfoResolver)
         string input,
         out string orgName,
         out string projectName,
-        out int buildId)
+        out int buildId
+    )
     {
         orgName = "";
         projectName = "";
@@ -49,8 +52,10 @@ internal sealed class BuildIdResolver(RepoInfoResolver repoInfoResolver)
         if (!Uri.TryCreate(input, UriKind.Absolute, out var uri))
             return false;
 
-        if (!uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase)
-            && !uri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase))
+        if (
+            !uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase)
+            && !uri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase)
+        )
             return false;
 
         var query = uri.Query;
