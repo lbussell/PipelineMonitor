@@ -54,8 +54,12 @@ consoleAppBuilder.Add<InfoCommand>();
 consoleAppBuilder.Add<RunCommand>();
 consoleAppBuilder.Add<ParametersCommand>();
 consoleAppBuilder.Add<VariablesCommand>();
-consoleAppBuilder.Add<RunsCommand>();
 consoleAppBuilder.Add<StatusCommand>();
 consoleAppBuilder.Add<CancelCommand>();
+
+// In-development commands
+#if DEBUG
+consoleAppBuilder.Add<RunsCommand>();
+#endif
 
 await consoleAppBuilder.RunAsync(args);
