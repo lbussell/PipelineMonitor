@@ -3,36 +3,19 @@
 
 using System.Collections.Concurrent;
 using Azure.Core;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.VisualStudio.Services.OAuth;
 using Microsoft.VisualStudio.Services.WebApi;
 
 namespace PipelineMonitor.Authentication;
 
 /// <summary>
-/// Provides an authenticated connection to Azure DevOps.
+/// Provides authenticated connections to Azure DevOps organizations.
 /// </summary>
-internal interface IVssConnectionProvider
+internal sealed class VssConnectionProvider(AzureCredentialProvider azureCredentialProvider)
 {
-    /// <summary>
-    /// Gets an authenticated VssConnection for the specified organization.
-    /// </summary>
-    /// <param name="organization">
-    /// URI of the Azure DevOps organization, example: "https://dev.azure.com/orgname"
-    /// </param>
-    /// <returns></returns>
-    VssConnection GetConnection(Uri organization);
-}
-
-/// <inheritdoc/>
-internal sealed class VssConnectionProvider(IAzureCredentialProvider azureCredentialProvider)
-    : IVssConnectionProvider
-{
-    private readonly IAzureCredentialProvider _azureCredentialProvider = azureCredentialProvider;
+    private readonly AzureCredentialProvider _azureCredentialProvider = azureCredentialProvider;
     private readonly ConcurrentDictionary<string, Lazy<VssConnection>> _connectionCache = new();
 
-    /// <inheritdoc/>
     public VssConnection GetConnection(Uri organization)
     {
         var cacheKey = organization.AbsoluteUri;
@@ -59,15 +42,4 @@ internal sealed class VssConnectionProvider(IAzureCredentialProvider azureCreden
     }
 }
 
-internal static class VssConnectionProviderExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddVssConnectionProvider()
-        {
-            services.TryAddSingleton<IVssConnectionProvider, VssConnectionProvider>();
-            services.TryAddAzureCredentialProvider();
-            return services;
-        }
-    }
-}
+

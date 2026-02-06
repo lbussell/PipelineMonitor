@@ -9,11 +9,11 @@ namespace PipelineMonitor.Commands;
 
 internal sealed class RunsCommand(
     IAnsiConsole ansiConsole,
-    IPipelineResolver pipelineResolver,
+    PipelineResolver pipelineResolver,
     PipelinesService pipelinesService)
 {
     private readonly IAnsiConsole _ansiConsole = ansiConsole;
-    private readonly IPipelineResolver _pipelineResolver = pipelineResolver;
+    private readonly PipelineResolver _pipelineResolver = pipelineResolver;
     private readonly PipelinesService _pipelinesService = pipelinesService;
 
     [Command("runs")]
@@ -25,13 +25,12 @@ internal sealed class RunsCommand(
 
         var pipelineRuns = _pipelinesService.GetRunsAsync(pipeline, top);
 
-        var descriptionColumn = new TableColumn("Description");
         var table = new Table()
-            .AddColumn("") // Result
-            .AddColumn(descriptionColumn)
-            .AddColumn("Stages")
-            .AddColumn(new TableColumn("").RightAligned()) // Time
-            .Border(TableBorder.Horizontal);
+            .AddColumn("Result")
+            .AddColumn("Name")
+            .AddColumn("Commit")
+            .AddColumn("State")
+            .Border(TableBorder.Simple);
 
         await _ansiConsole
             .Live(table)
@@ -39,7 +38,21 @@ internal sealed class RunsCommand(
             {
                 await foreach (var run in pipelineRuns)
                 {
-                    table.AddRow(run.ResultSymbol, run.RunDetails, run.StagesSummary, run.TimeDetails);
+                    var resultText = run.Result switch
+                    {
+                        PipelineRunResult.Succeeded => "[green]✓[/]",
+                        PipelineRunResult.PartiallySucceeded => "[yellow]~[/]",
+                        PipelineRunResult.Failed => "[red]✗[/]",
+                        PipelineRunResult.Canceled => "[grey]/[/]",
+                        _ => "[grey]-[/]",
+                    };
+
+                    var commitMessage = run.Commit?.Message ?? "";
+                    table.AddRow(
+                        resultText,
+                        Markup.Escape(run.Name),
+                        Markup.Escape(commitMessage),
+                        run.State);
                     context.Refresh();
                 }
             });

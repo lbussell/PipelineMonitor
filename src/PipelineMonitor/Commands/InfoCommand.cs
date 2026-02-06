@@ -9,16 +9,15 @@ namespace PipelineMonitor.Commands;
 
 internal sealed class InfoCommand(
     IAnsiConsole ansiConsole,
-    IPipelineResolver pipelineResolver)
+    PipelineResolver pipelineResolver)
 {
     private readonly IAnsiConsole _ansiConsole = ansiConsole;
-    private readonly IPipelineResolver _pipelineResolver = pipelineResolver;
+    private readonly PipelineResolver _pipelineResolver = pipelineResolver;
 
     [Command("info")]
     public async Task ExecuteAsync([Argument] string definitionPath)
     {
         var pipeline = await _pipelineResolver.GetLocalPipelineAsync(definitionPath);
-        _ansiConsole.Write(pipeline.SingleLineDisplay);
-        _ansiConsole.WriteLine();
+        _ansiConsole.MarkupLine($"[blue]{Markup.Escape(pipeline.RelativePath)}[/] refers to pipeline [bold green]{Markup.Escape(pipeline.Name)}[/] [dim](ID: {pipeline.Id.Value})[/]");
     }
 }

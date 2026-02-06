@@ -4,8 +4,6 @@
 using System.Text;
 using CliWrap;
 using CliWrap.Buffered;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace PipelineMonitor;
 
@@ -37,14 +35,4 @@ internal sealed class CliWrapProcessRunner : IProcessRunner
     }
 }
 
-internal static class ProcessRunnerExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddProcessRunner()
-        {
-            services.TryAddSingleton<IProcessRunner, CliWrapProcessRunner>();
-            return services;
-        }
-    }
-}
+

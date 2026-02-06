@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace PipelineMonitor.Filters;
 
 internal sealed class ExceptionHandlingFilter(
-    IInteractionService interactionService,
+    InteractionService interactionService,
     ILogger<ExceptionHandlingFilter> logger,
     ConsoleAppFilter next) : ConsoleAppFilter(next)
 {

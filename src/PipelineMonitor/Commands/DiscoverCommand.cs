@@ -9,11 +9,11 @@ namespace PipelineMonitor.Commands;
 
 internal sealed class DiscoverCommand(
     IAnsiConsole ansiConsole,
-    IInteractionService interactionService,
+    InteractionService interactionService,
     PipelinesService pipelinesService)
 {
     private readonly IAnsiConsole _ansiConsole = ansiConsole;
-    private readonly IInteractionService _interactionService = interactionService;
+    private readonly InteractionService _interactionService = interactionService;
     private readonly PipelinesService _pipelinesService = pipelinesService;
 
     [Command("discover")]

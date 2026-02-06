@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using PipelineMonitor.Git;
 
@@ -11,37 +9,15 @@ namespace PipelineMonitor.AzureDevOps;
 /// <summary>
 /// Resolves Azure DevOps organization, project, and repository information from the environment.
 /// </summary>
-internal interface IRepoInfoResolver
-{
-    /// <summary>
-    /// Resolves Azure DevOps organization, project, and repository from the environment.
-    /// Auto-detects from Git remote if values are not provided and detection is enabled.
-    /// </summary>
-    /// <param name="organization">Optional organization URL or name. If null, attempts to detect.</param>
-    /// <param name="project">Optional project name. If null, attempts to detect.</param>
-    /// <param name="repository">Optional repository name. If null, attempts to detect.</param>
-    /// <param name="detectFromGit">Whether to attempt auto-detection from Git remotes.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Resolved information with potentially null fields if resolution failed.</returns>
-    Task<ResolvedRepoInfo> ResolveAsync(
-        string? organization = null,
-        string? project = null,
-        string? repository = null,
-        bool detectFromGit = true,
-        CancellationToken cancellationToken = default);
-}
-
-/// <inheritdoc/>
 internal sealed class RepoInfoResolver(
-    IGitRemoteUrlProvider gitRemoteUrlProvider,
-    IVstsGitUrlParser vstsGitUrlParser,
-    ILogger<RepoInfoResolver> logger) : IRepoInfoResolver
+    GitService gitService,
+    VstsGitUrlParser vstsGitUrlParser,
+    ILogger<RepoInfoResolver> logger)
 {
-    private readonly IGitRemoteUrlProvider _gitRemoteUrlProvider = gitRemoteUrlProvider;
-    private readonly IVstsGitUrlParser _vstsGitUrlParser = vstsGitUrlParser;
+    private readonly GitService _gitService = gitService;
+    private readonly VstsGitUrlParser _vstsGitUrlParser = vstsGitUrlParser;
     private readonly ILogger<RepoInfoResolver> _logger = logger;
 
-    /// <inheritdoc/>
     public async Task<ResolvedRepoInfo> ResolveAsync(
         string? organization = null,
         string? project = null,
@@ -76,7 +52,7 @@ internal sealed class RepoInfoResolver(
         {
             var startTime = DateTime.Now;
 
-            var remoteUrl = await _gitRemoteUrlProvider.GetRemoteUrlAsync(_vstsGitUrlParser.IsAzureDevOpsUrl, cancellationToken);
+            var remoteUrl = await _gitService.GetRemoteUrlAsync(_vstsGitUrlParser.IsAzureDevOpsUrl, cancellationToken);
             if (!string.IsNullOrEmpty(remoteUrl))
             {
                 var detected = await _vstsGitUrlParser.ParseAsync(remoteUrl, cancellationToken);
@@ -138,16 +114,4 @@ internal sealed class RepoInfoResolver(
     }
 }
 
-internal static class RepoInfoResolverExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddRepoInfoResolver()
-        {
-            services.TryAddGitService();
-            services.TryAddVstsGitUrlParser();
-            services.TryAddSingleton<IRepoInfoResolver, RepoInfoResolver>();
-            return services;
-        }
-    }
-}
+

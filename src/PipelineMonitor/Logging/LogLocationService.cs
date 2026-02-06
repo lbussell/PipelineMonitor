@@ -1,18 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 using NLog;
 using NLog.Targets;
 
 namespace PipelineMonitor.Logging;
 
-internal sealed class LogLocationService(IInteractionService interactionService) : IHostedLifecycleService
+internal sealed class LogLocationService(InteractionService interactionService) : IHostedLifecycleService
 {
-    private readonly IInteractionService _interactionService = interactionService;
+    private readonly InteractionService _interactionService = interactionService;
 
     public Task StartingAsync(CancellationToken _)
     {
@@ -29,14 +27,4 @@ internal sealed class LogLocationService(IInteractionService interactionService)
     public Task StoppingAsync(CancellationToken _) => Task.CompletedTask;
     public Task StopAsync(CancellationToken _) => Task.CompletedTask;
     public Task StoppedAsync(CancellationToken _) => Task.CompletedTask;
-}
-
-internal static class LogLocationServiceExtensions
-{
-    public static ILoggingBuilder AddLogLocationOnStart(this ILoggingBuilder loggingBuilder)
-    {
-        loggingBuilder.Services.AddHostedService<LogLocationService>();
-        loggingBuilder.Services.TryAddInteractionService();
-        return loggingBuilder;
-    }
 }

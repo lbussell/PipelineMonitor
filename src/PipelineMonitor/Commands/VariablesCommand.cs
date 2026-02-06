@@ -10,13 +10,13 @@ namespace PipelineMonitor.Commands;
 
 internal sealed class VariablesCommand(
     IAnsiConsole ansiConsole,
-    IInteractionService interactionService,
-    IPipelineResolver pipelineResolver,
+    InteractionService interactionService,
+    PipelineResolver pipelineResolver,
     PipelinesService pipelinesService)
 {
     private readonly IAnsiConsole _ansiConsole = ansiConsole;
-    private readonly IInteractionService _interactionService = interactionService;
-    private readonly IPipelineResolver _pipelineResolver = pipelineResolver;
+    private readonly InteractionService _interactionService = interactionService;
+    private readonly PipelineResolver _pipelineResolver = pipelineResolver;
     private readonly PipelinesService _pipelinesService = pipelinesService;
 
     private static readonly JsonSerializerOptions JsonOptions = new()

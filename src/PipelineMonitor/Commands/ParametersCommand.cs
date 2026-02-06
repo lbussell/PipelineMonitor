@@ -10,14 +10,14 @@ namespace PipelineMonitor.Commands;
 
 internal sealed class ParametersCommand(
     IAnsiConsole ansiConsole,
-    IInteractionService interactionService,
-    IPipelineResolver pipelineResolver,
-    IPipelineYamlService pipelineYamlService)
+    InteractionService interactionService,
+    PipelineResolver pipelineResolver,
+    PipelineYamlService pipelineYamlService)
 {
     private readonly IAnsiConsole _ansiConsole = ansiConsole;
-    private readonly IInteractionService _interactionService = interactionService;
-    private readonly IPipelineResolver _pipelineResolver = pipelineResolver;
-    private readonly IPipelineYamlService _pipelineYamlService = pipelineYamlService;
+    private readonly InteractionService _interactionService = interactionService;
+    private readonly PipelineResolver _pipelineResolver = pipelineResolver;
+    private readonly PipelineYamlService _pipelineYamlService = pipelineYamlService;
 
     [Command("parameters")]
     public async Task ExecuteAsync([Argument] string definitionPath)

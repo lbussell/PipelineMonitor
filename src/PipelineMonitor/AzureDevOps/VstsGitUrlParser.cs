@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using PipelineMonitor.Authentication;
@@ -13,29 +11,13 @@ namespace PipelineMonitor.AzureDevOps;
 /// <summary>
 /// Parses Azure DevOps Git URLs to extract organization, project, and repository information.
 /// </summary>
-internal interface IVstsGitUrlParser
-{
-    /// <summary>
-    /// Determines if a URL appears to be an Azure DevOps Git URL.
-    /// </summary>
-    bool IsAzureDevOpsUrl(string? url);
-
-    /// <summary>
-    /// Parses an Azure DevOps Git URL to extract organization, project, and repo info.
-    /// Optionally validates the repository via the Azure DevOps API.
-    /// </summary>
-    Task<ResolvedRepoInfo?> ParseAsync(string remoteUrl, CancellationToken cancellationToken = default);
-}
-
-/// <inheritdoc/>
 internal sealed partial class VstsGitUrlParser(
-    IVssConnectionProvider connectionProvider,
-    ILogger<VstsGitUrlParser> logger) : IVstsGitUrlParser
+    VssConnectionProvider connectionProvider,
+    ILogger<VstsGitUrlParser> logger)
 {
-    private readonly IVssConnectionProvider _connectionProvider = connectionProvider;
+    private readonly VssConnectionProvider _connectionProvider = connectionProvider;
     private readonly ILogger<VstsGitUrlParser> _logger = logger;
 
-    /// <inheritdoc/>
     public bool IsAzureDevOpsUrl(string? url)
     {
         if (string.IsNullOrEmpty(url))
@@ -66,7 +48,6 @@ internal sealed partial class VstsGitUrlParser(
         return false;
     }
 
-    /// <inheritdoc/>
     public async Task<ResolvedRepoInfo?> ParseAsync(string remoteUrl, CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Parsing remote URL: {RemoteUrl}", remoteUrl);
@@ -340,15 +321,4 @@ internal sealed partial class VstsGitUrlParser(
     private static partial Regex SshNetlocRegex();
 }
 
-internal static class VstsGitUrlParserExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddVstsGitUrlParser()
-        {
-            services.TryAddSingleton<IVstsGitUrlParser, VstsGitUrlParser>();
-            services.TryAddVssConnectionProvider();
-            return services;
-        }
-    }
-}
+

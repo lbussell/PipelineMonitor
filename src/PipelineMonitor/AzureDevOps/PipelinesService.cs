@@ -3,8 +3,6 @@
 
 using System.Runtime.CompilerServices;
 using Microsoft.Azure.Pipelines.WebApi;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -14,13 +12,13 @@ using PipelineMonitor.Git;
 namespace PipelineMonitor.AzureDevOps;
 
 internal sealed class PipelinesService(
-    IVssConnectionProvider vssConnectionProvider,
-    IRepoInfoResolver repoInfoResolver,
-    IGitRepoRootProvider gitRepoRootProvider)
+    VssConnectionProvider vssConnectionProvider,
+    RepoInfoResolver repoInfoResolver,
+    GitService gitService)
 {
-    private readonly IVssConnectionProvider _vssConnectionProvider = vssConnectionProvider;
-    private readonly IRepoInfoResolver _repoInfoResolver = repoInfoResolver;
-    private readonly IGitRepoRootProvider _gitRepoRootProvider = gitRepoRootProvider;
+    private readonly VssConnectionProvider _vssConnectionProvider = vssConnectionProvider;
+    private readonly RepoInfoResolver _repoInfoResolver = repoInfoResolver;
+    private readonly GitService _gitService = gitService;
 
     public async Task<PipelineInfo> GetPipelineAsync(OrganizationInfo org, ProjectInfo project, PipelineId id)
     {
@@ -51,7 +49,7 @@ internal sealed class PipelinesService(
             repositoryType: "TfsGit",
             cancellationToken: ct);
 
-        var repoRoot = await _gitRepoRootProvider.GetRepoRootAsync(ct);
+        var repoRoot = await _gitService.GetRepoRootAsync(ct);
 
         foreach (var buildDefinition in buildDefinitions)
         {
@@ -250,16 +248,4 @@ internal sealed class PipelinesService(
     }
 }
 
-internal static class PipelinesServiceExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddPipelinesService()
-        {
-            services.TryAddSingleton<PipelinesService>();
-            services.TryAddVssConnectionProvider();
-            services.TryAddRepoInfoResolver();
-            return services;
-        }
-    }
-}
+

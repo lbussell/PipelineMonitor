@@ -1,43 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 
 namespace PipelineMonitor;
 
-internal interface IInteractionService
-{
-    bool IsInteractive { get; }
-
-    Task<T> ShowStatusAsync<T>(string statusText, Func<Task<T>> action);
-
-    void DisplaySubtleMessage(string message, bool escapeMarkup = true);
-
-    void DisplayError(string message, bool escapeMarkup = true);
-
-    void DisplayWarning(string message, bool escapeMarkup = true);
-
-    void DisplaySuccess(string message, bool escapeMarkup = true);
-
-    Task<T> PromptAsync<T>(string prompt, T? defaultValue = default) where T : notnull;
-
-    Task<T> SelectAsync<T>(string prompt, IEnumerable<T> choices,
-        Func<T, string>? displaySelector = null, T? defaultValue = default) where T : notnull;
-
-    Task<IReadOnlyList<T>> MultiSelectAsync<T>(string prompt, IEnumerable<T> choices,
-        Func<T, string>? displaySelector = null, IEnumerable<T>? defaults = null,
-        bool required = false) where T : notnull;
-
-    Task<bool> ConfirmAsync(string prompt, bool defaultValue = false);
-
-    Task<string> SelectAsync(string prompt, IEnumerable<string> suggestions);
-}
-
-internal sealed class InteractionService(IAnsiConsole ansiConsole) : IInteractionService
+internal sealed class InteractionService(IAnsiConsole ansiConsole)
 {
     private readonly IAnsiConsole _ansiConsole = ansiConsole;
 
@@ -162,19 +131,6 @@ internal sealed class InteractionService(IAnsiConsole ansiConsole) : IInteractio
         }
 
         return selected;
-    }
-}
-
-internal static class InteractionServiceExtensions
-{
-    extension(IServiceCollection services)
-    {
-        public IServiceCollection TryAddInteractionService()
-        {
-            services.TryAddSingleton<IInteractionService, InteractionService>();
-            services.TryAddSingleton(_ => AnsiConsole.Console);
-            return services;
-        }
     }
 }
 
