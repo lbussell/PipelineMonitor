@@ -9,7 +9,7 @@ using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
 
-internal sealed class CheckCommand(
+internal sealed class RunCommand(
     IAnsiConsole ansiConsole,
     InteractionService interactionService,
     PipelineResolver pipelineResolver,
@@ -27,6 +27,8 @@ internal sealed class CheckCommand(
     /// <summary>
     /// Preview-expand a pipeline's YAML by calling the Azure DevOps Preview API.
     /// </summary>
+    /// <param name="definitionPath">Relative path to the pipeline YAML file.</param>
+    /// <param name="parameter">Template parameters as key=value pairs.</param>
     [Command("check")]
     public async Task ExecuteAsync(
         [Argument] string definitionPath,
@@ -36,7 +38,7 @@ internal sealed class CheckCommand(
 
         await EnsureGitInSyncAsync();
 
-        var templateParameters = ParseKeyValuePairs(parameter, "parameter");
+        var templateParameters = ParseKeyValuePairs(parameter ?? [], "parameter");
 
         await ValidateParametersAsync(pipeline, templateParameters);
 
@@ -64,6 +66,49 @@ internal sealed class CheckCommand(
         _ansiConsole.WriteLine($"Output: {tempFile}");
     }
 
+    /// <summary>
+    /// Queue a pipeline run on Azure DevOps.
+    /// </summary>
+    /// <param name="definitionPath">Relative path to the pipeline YAML file.</param>
+    /// <param name="parameter">Template parameters as key=value pairs.</param>
+    /// <param name="variable">Pipeline variable overrides as key=value pairs.</param>
+    [Command("run")]
+    public async Task RunAsync(
+        [Argument] string definitionPath,
+        string[]? parameter = null,
+        string[]? variable = null)
+    {
+        var pipeline = await _pipelineResolver.GetLocalPipelineAsync(definitionPath);
+
+        await EnsureGitInSyncAsync();
+
+        var templateParameters = ParseKeyValuePairs(parameter ?? [], "parameter");
+        var variables = ParseKeyValuePairs(variable ?? [], "variable");
+
+        await ValidateParametersAsync(pipeline, templateParameters);
+        await ValidateVariablesAsync(pipeline, variables);
+
+        var branch = await _gitService.GetCurrentBranchAsync();
+        var refName = branch is not null ? $"refs/heads/{branch}" : null;
+
+        _ansiConsole.WriteLine($"Queuing pipeline '{pipeline.Name}'...");
+
+        QueuedPipelineRunInfo runInfo;
+        try
+        {
+            runInfo = await _interactionService.ShowLoadingAsync(
+                "Queuing run...",
+                () => _pipelinesService.RunPipelineAsync(pipeline, refName, templateParameters, variables));
+        }
+        catch (Exception ex)
+        {
+            throw new UserFacingException($"Failed to queue pipeline run: {ex.Message}", ex);
+        }
+
+        _interactionService.DisplaySuccess($"Pipeline run queued successfully.");
+        _ansiConsole.MarkupLineInterpolated($"Run: [link={runInfo.WebUrl}]{runInfo.WebUrl}[/]");
+    }
+
     private async Task EnsureGitInSyncAsync()
     {
         var workingTree = await _gitService.GetWorkingTreeStatusAsync();
@@ -83,11 +128,44 @@ internal sealed class CheckCommand(
             throw new UserFacingException($"Branch is {ahead} ahead and {behind} behind upstream. Push/pull to sync before running check.");
     }
 
+    private async Task ValidateVariablesAsync(
+        LocalPipelineInfo pipeline,
+        Dictionary<string, string> variables)
+    {
+        if (variables.Count == 0)
+            return;
+
+        var definedVariables = await _pipelinesService.GetVariablesAsync(pipeline);
+        var definedNames = definedVariables
+            .ToDictionary(v => v.Name, v => v, StringComparer.OrdinalIgnoreCase);
+
+        var unknownVars = variables.Keys
+            .Where(k => !definedNames.ContainsKey(k))
+            .ToList();
+
+        if (unknownVars.Count > 0)
+        {
+            var defined = definedVariables.Count > 0
+                ? string.Join(", ", definedVariables.Select(v => v.Name))
+                : "(none)";
+            throw new UserFacingException(
+                $"Unknown variable(s): {string.Join(", ", unknownVars)}. Defined variables: {defined}");
+        }
+
+        var nonOverridableVars = variables.Keys
+            .Where(k => definedNames.TryGetValue(k, out var v) && !v.AllowOverride)
+            .ToList();
+
+        if (nonOverridableVars.Count > 0)
+            throw new UserFacingException(
+                $"Variable(s) not allowed to override: {string.Join(", ", nonOverridableVars)}. Set 'Settable at queue time' in the pipeline definition.");
+    }
+
     private async Task ValidateParametersAsync(
         LocalPipelineInfo pipeline,
-        Dictionary<string, string>? templateParameters)
+        Dictionary<string, string> templateParameters)
     {
-        if (templateParameters is null || templateParameters.Count == 0)
+        if (templateParameters.Count == 0)
             return;
 
         var pipelineYaml = await _pipelineYamlService.ParseAsync(pipeline.DefinitionFile.FullName);
@@ -112,11 +190,8 @@ internal sealed class CheckCommand(
         }
     }
 
-    private static Dictionary<string, string>? ParseKeyValuePairs(string[]? pairs, string label)
+    private static Dictionary<string, string> ParseKeyValuePairs(string[] pairs, string label)
     {
-        if (pairs is null || pairs.Length == 0)
-            return null;
-
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var pair in pairs)
         {

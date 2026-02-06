@@ -51,3 +51,5 @@ internal sealed record CommitInfo(string Sha, string Message, string Author, Dat
 internal sealed record StageInfo(string Name, string State, PipelineRunResult Result);
 
 internal sealed record PipelineVariableInfo(string Name, string Value, bool IsSecret, bool AllowOverride);
+
+internal sealed record QueuedPipelineRunInfo(RunId Id, string Name, string WebUrl);

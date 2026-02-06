@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Microsoft.Azure.Pipelines.WebApi;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Work.WebApi;
@@ -238,6 +239,48 @@ internal sealed class PipelinesService(
         return preview.FinalYaml;
     }
 
+    public async Task<QueuedPipelineRunInfo> RunPipelineAsync(
+        LocalPipelineInfo pipeline,
+        string? refName = null,
+        Dictionary<string, string>? templateParameters = null,
+        Dictionary<string, string>? variables = null,
+        CancellationToken ct = default)
+    {
+        var connection = _vssConnectionProvider.GetConnection(pipeline.Organization.Uri);
+        var buildsClient = connection.GetClient<BuildHttpClient>();
+
+        var build = new Build
+        {
+            Definition = new DefinitionReference { Id = pipeline.Id.Value },
+            SourceBranch = refName,
+        };
+
+        if (templateParameters is not null)
+            build.TemplateParameters = new Dictionary<string, string>(templateParameters, StringComparer.OrdinalIgnoreCase);
+
+        if (variables is not null)
+            build.Parameters = JsonSerializer.Serialize(variables);
+
+        var queuedBuild = await buildsClient.QueueBuildAsync(
+            build,
+            project: pipeline.Project.Name,
+            cancellationToken: ct);
+
+        var webUrl = GetBuildWebUrl(queuedBuild, pipeline);
+
+        return new QueuedPipelineRunInfo(
+            Id: new RunId(queuedBuild.Id),
+            Name: queuedBuild.BuildNumber,
+            WebUrl: webUrl);
+    }
+
+    private static string GetBuildWebUrl(Build build, LocalPipelineInfo pipeline)
+    {
+        var org = pipeline.Organization.Name;
+        var project = pipeline.Project.Name;
+        return $"https://dev.azure.com/{Uri.EscapeDataString(org)}/{Uri.EscapeDataString(project)}/_build/results?buildId={build.Id}";
+    }
+
     public async Task SetVariablesAsync(
         LocalPipelineInfo pipeline,
         IEnumerable<PipelineVariableInfo> variables,
@@ -279,5 +322,3 @@ internal sealed class PipelinesService(
             cancellationToken: ct);
     }
 }
-
-

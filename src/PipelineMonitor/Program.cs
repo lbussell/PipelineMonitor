@@ -49,7 +49,7 @@ var consoleAppBuilder = builder.ToConsoleAppBuilder();
 consoleAppBuilder.UseFilter<ExceptionHandlingFilter>();
 consoleAppBuilder.Add<DiscoverCommand>();
 consoleAppBuilder.Add<InfoCommand>();
-consoleAppBuilder.Add<CheckCommand>();
+consoleAppBuilder.Add<RunCommand>();
 consoleAppBuilder.Add<ParametersCommand>();
 consoleAppBuilder.Add<VariablesCommand>();
 consoleAppBuilder.Add<RunsCommand>();
