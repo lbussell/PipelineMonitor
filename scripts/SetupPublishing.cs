@@ -99,8 +99,14 @@ static async Task SetNugetUserSecretAsync(string owner, string repo)
 static async Task SetupTrustedPublishingAsync(string owner, string repo)
 {
     AnsiConsole.WriteLine();
-    AnsiConsole.MarkupLine("[bold green]Next step:[/] set up Trusted Publishing on [link]https://www.nuget.org[/].");
-    AnsiConsole.MarkupLine("See the README for details on configuring Trusted Publishing.");
+    AnsiConsole.MarkupLine("[bold green]Next step:[/] set up Trusted Publishing on NuGet.org.");
+    AnsiConsole.MarkupLine("Go to [link]https://www.nuget.org/account/trustedpublishing[/] and add a new Trusted Publisher with:");
+    AnsiConsole.WriteLine();
+    AnsiConsole.MarkupLine($"[bold]Policy Name:[/]      {Markup.Escape(repo)}");
+    AnsiConsole.MarkupLine($"[bold]Repository Owner:[/] {Markup.Escape(owner)}");
+    AnsiConsole.MarkupLine($"[bold]Repository:[/]       {Markup.Escape(repo)}");
+    AnsiConsole.MarkupLine($"[bold]Workflow File:[/]     publish-nuget.yml");
+    AnsiConsole.MarkupLine($"[bold]Environment:[/]       production");
 }
 
 internal static class Prompt

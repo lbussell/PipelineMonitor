@@ -27,27 +27,11 @@ publishing to NuGet.org.
 
 ### Setting Up Trusted Publishing
 
-> [!TIP]
-> Steps 1-2 below can be automated by running:
->
-> ```bash
-> dotnet run scripts/SetupPublishing.cs
-> ```
+Run the setup script to configure GitHub and NuGet.org for trusted publishing:
 
-1. **Create a [NuGet.org](https://www.nuget.org) account** if you don't already
-    have one.
-2. **Create a new GitHub environment**:
-   - Go to Settings → Environments
-   - Create a new environment named `production`
-   - Add a new environment secret called NUGET_USER that contains your
-     NuGet.org username:
-     ![Setup Environment](https://raw.githubusercontent.com/lbussell/dotnet-template-packages/refs/heads/main/images/environment-1.jpg)
-3. **Set up Trusted Publishing to NuGet.org**:
-   - From [NuGet.org](https://www.nuget.org), click on your username in the top
-     right and then click "Trusted Publishing".
-   - Create a new Trusted Publishing configuration pointing at your repository
-     and the `publish-nuget.yml` workflow file:
-     ![Trusted Publishing configuration](https://raw.githubusercontent.com/lbussell/dotnet-template-packages/refs/heads/main/images/trusted-publishing-2.jpg)
+```bash
+dotnet run scripts/SetupPublishing.cs
+```
 
 ### Updating Package Version Numbers
 
