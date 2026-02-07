@@ -3,6 +3,7 @@
 
 using ConsoleAppFramework;
 using Microsoft.Extensions.Logging;
+using PipelineMonitor.Display;
 using Spectre.Console;
 
 namespace PipelineMonitor.Filters;

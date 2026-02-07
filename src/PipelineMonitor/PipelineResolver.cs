@@ -5,10 +5,9 @@ using PipelineMonitor.AzureDevOps;
 
 namespace PipelineMonitor;
 
-internal sealed class PipelineResolver(PipelinesService pipelinesService, InteractionService interactionService)
+internal sealed class PipelineResolver(PipelinesService pipelinesService)
 {
     private readonly PipelinesService _pipelinesService = pipelinesService;
-    private readonly InteractionService _interactionService = interactionService;
 
     public async Task<IReadOnlyList<LocalPipelineInfo>> GetLocalPipelinesAsync()
     {
@@ -31,14 +30,15 @@ internal sealed class PipelineResolver(PipelinesService pipelinesService, Intera
             .Where(pipeline => pipeline.DefinitionFile.FullName.Equals(pipelineFile.FullName))
             .ToList();
 
-        var pipelineInfo = matchingPipelines.FirstOrDefault();
-
         if (matchingPipelines.Count > 1)
-            pipelineInfo = await _interactionService.SelectAsync(
-                "Multiple pipelines found for the specified definition file. Please select one:",
-                matchingPipelines,
-                pipeline => pipeline.Name
+        {
+            var names = string.Join(", ", matchingPipelines.Select(p => p.Name));
+            throw new UserFacingException(
+                $"Multiple pipelines found for '{definitionPath}': {names}. Please disambiguate."
             );
+        }
+
+        var pipelineInfo = matchingPipelines.FirstOrDefault();
 
         if (pipelineInfo is null)
             throw new UserFacingException($"No pipeline found for definition file '{definitionPath}'.");

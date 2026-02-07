@@ -38,7 +38,7 @@ Service Layer:
 ├── PipelinesService          - Fetches pipeline data from Azure DevOps API
 ├── PipelineYamlService       - Parses Azure Pipelines YAML files
 ├── RepoInfoResolver          - Detects org/project/repo from Git remotes
-├── InteractionService        - Displays output with Spectre.Console
+├── InteractionService        - Displays errors/warnings/success with Spectre.Console
 ├── GitService                - Reads Git remote URLs and repository root
 ├── VstsGitUrlParser          - Parses Azure DevOps Git URLs
 └── VssConnectionProvider     - Manages authenticated VSS connections
@@ -57,8 +57,15 @@ Tests are in`src/PipelineMonitor.Tests/AzureDevOps/Yaml/` and use MSTest with pa
 ## Dependencies
 
 - **Azure.Identity** - Azure authentication (AzureDeveloperCliCredential)
+- **Markout** - Structured markdown output (source-generated serializer)
 - **Microsoft.TeamFoundationServer.Client** - Azure DevOps API
-- **Spectre.Console** - Rich console output/tables
+- **Spectre.Console** - Console abstraction and error/warning formatting
 - **ConsoleAppFramework** - CLI framework
 - **YamlDotNet** - YAML parsing
 - **CliWrap** - Process execution wrapper
+
+## Output Style
+
+- All data output uses the **Markout** library to produce portable markdown (tables, trees, fields).
+- Output must be **plain text only** — do not use emoji, Unicode symbols, or special icons.
+- Error, warning, and success messages use Spectre.Console markup and are the only exception.

@@ -3,6 +3,7 @@
 
 using ConsoleAppFramework;
 using PipelineMonitor.AzureDevOps;
+using PipelineMonitor.Display;
 
 namespace PipelineMonitor.Commands;
 

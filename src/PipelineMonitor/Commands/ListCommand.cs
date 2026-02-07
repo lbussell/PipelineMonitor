@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 using ConsoleAppFramework;
+using Markout;
 using PipelineMonitor.AzureDevOps;
 using Spectre.Console;
 
@@ -9,25 +10,24 @@ namespace PipelineMonitor.Commands;
 
 internal sealed class ListCommand(
     IAnsiConsole ansiConsole,
-    InteractionService interactionService,
     PipelinesService pipelinesService
 )
 {
     private readonly IAnsiConsole _ansiConsole = ansiConsole;
-    private readonly InteractionService _interactionService = interactionService;
     private readonly PipelinesService _pipelinesService = pipelinesService;
 
     [Command("list|ls")]
     public async Task ExecuteAsync()
     {
-        var pipelinesTask = _pipelinesService.GetLocalPipelinesAsync().ToListAsync().AsTask();
+        var pipelines = await _pipelinesService.GetLocalPipelinesAsync().ToListAsync();
 
-        IReadOnlyList<LocalPipelineInfo> pipelines = await pipelinesTask;
+        var writer = new MarkoutWriter(_ansiConsole.Profile.Out.Writer);
+        writer.WriteTableStart("Name", "ID", "Definition");
 
         foreach (var pipeline in pipelines)
-        {
-            _ansiConsole.WriteLine();
-            _ansiConsole.Display(pipeline);
-        }
+            writer.WriteTableRow(pipeline.Name, pipeline.Id.Value.ToString(), pipeline.RelativePath);
+
+        writer.WriteTableEnd();
+        writer.Flush();
     }
 }

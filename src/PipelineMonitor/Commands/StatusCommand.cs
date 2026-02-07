@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: MIT
 
 using ConsoleAppFramework;
+using Markout;
 using PipelineMonitor.AzureDevOps;
+using PipelineMonitor.Display;
 using Spectre.Console;
+using TreeNode = Markout.TreeNode;
 
 namespace PipelineMonitor.Commands;
 
@@ -11,137 +14,84 @@ internal sealed class StatusCommand(
     IAnsiConsole ansiConsole,
     InteractionService interactionService,
     PipelinesService pipelinesService,
-    BuildIdResolver buildIdResolver,
-    IEnvironment environment
+    BuildIdResolver buildIdResolver
 )
 {
     private readonly IAnsiConsole _ansiConsole = ansiConsole;
     private readonly InteractionService _interactionService = interactionService;
     private readonly PipelinesService _pipelinesService = pipelinesService;
     private readonly BuildIdResolver _buildIdResolver = buildIdResolver;
-    private readonly IEnvironment _environment = environment;
 
     /// <summary>
-    /// Show the status of a pipeline run.
+    /// Show the status of a pipeline run as a tree.
     /// </summary>
     /// <param name="buildIdOrUrl">Build ID or Azure DevOps build results URL.</param>
-    /// <param name="stage">Filter to a specific stage.</param>
-    /// <param name="job">Filter to a specific job (requires --stage).</param>
+    /// <param name="depth">Tree nesting depth: 1=stages, 2=stages+jobs, 3=stages+jobs+tasks.</param>
     [Command("status")]
-    public async Task ExecuteAsync([Argument] string buildIdOrUrl, string? stage = null, string? job = null)
+    public async Task ExecuteAsync([Argument] string buildIdOrUrl, int depth = 2)
     {
-        if (job is not null && stage is null)
-            throw new UserFacingException("--job requires --stage to be specified.");
+        if (depth is < 1 or > 3)
+            throw new UserFacingException("--depth must be between 1 and 3.");
 
         var (org, project, buildId) = await _buildIdResolver.ResolveAsync(buildIdOrUrl);
-
         var timeline = await _pipelinesService.GetBuildTimelineAsync(org, project, buildId);
 
-        if (stage is null)
-            DisplayOverview(timeline, buildId);
-        else if (job is null)
-            DisplayStage(timeline, stage);
-        else
-            DisplayJob(timeline, stage, job);
+        var writer = new MarkoutWriter(_ansiConsole.Profile.Out.Writer);
+        WriteSummary(writer, timeline, buildId);
+        WriteTimelineTree(writer, timeline, depth);
+        writer.Flush();
     }
 
-    private void DisplayOverview(BuildTimelineInfo timeline, int buildId)
+    private void WriteSummary(MarkoutWriter writer, BuildTimelineInfo timeline, int buildId)
     {
         var completedStages = timeline.Stages.Count(s => s.State == TimelineRecordStatus.Completed);
         var totalStages = timeline.Stages.Count;
+        var overallState = GetOverallState(timeline);
 
-        var overallState =
-            timeline.Stages.Any(s => s.State == TimelineRecordStatus.InProgress) ? "Running"
-            : timeline.Stages.All(s => s.State == TimelineRecordStatus.Completed) ? GetOverallResult(timeline)
-            : "Pending";
-
-        _ansiConsole.MarkupLineInterpolated(
-            $"[bold]{overallState}[/] - {completedStages}/{totalStages} Stages complete"
-        );
-        _ansiConsole.WriteLine();
-
-        foreach (var stageInfo in timeline.Stages)
-        {
-            var stateLabel = GetStateLabel(stageInfo.State, stageInfo.Result);
-            var completedJobs = stageInfo.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
-            var totalJobs = stageInfo.Jobs.Count;
-            _ansiConsole.WriteLine($"{stageInfo.Name} - {stateLabel}{FormatLogId(stageInfo.LogId)} (Jobs: {completedJobs}/{totalJobs} complete)");
-        }
+        writer.WriteParagraph($"{overallState} — {completedStages}/{totalStages} stages complete");
 
         var isRunning = overallState is "Running" or "Pending";
         if (isRunning)
-        {
-            _ansiConsole.WriteLine();
             _interactionService.DisplaySubtleMessage($"To cancel, run: `cancel {buildId}`");
-        }
     }
 
-    private void DisplayStage(BuildTimelineInfo timeline, string stageName)
+    private static void WriteTimelineTree(MarkoutWriter writer, BuildTimelineInfo timeline, int depth)
     {
-        var stageInfo = timeline.Stages.FirstOrDefault(s =>
-            s.Name.Equals(stageName, StringComparison.OrdinalIgnoreCase)
-        );
+        var stageNodes = timeline.Stages
+            .Select(stage => BuildStageNode(stage, depth))
+            .ToList();
 
-        if (stageInfo is null)
-        {
-            var available = string.Join(", ", timeline.Stages.Select(s => s.Name));
-            throw new UserFacingException($"Stage '{stageName}' not found. Available stages: {available}");
-        }
-
-        var stateLabel = GetStateLabel(stageInfo.State, stageInfo.Result);
-        var completedJobs = stageInfo.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
-        var totalJobs = stageInfo.Jobs.Count;
-
-        _ansiConsole.MarkupLineInterpolated(
-            $"[bold]{stageInfo.Name}[/] - {stateLabel}{FormatLogId(stageInfo.LogId)} (Jobs: {completedJobs}/{totalJobs} complete)"
-        );
-        _ansiConsole.WriteLine();
-
-        foreach (var jobInfo in stageInfo.Jobs)
-        {
-            var jobState = GetStateLabel(jobInfo.State, jobInfo.Result);
-            var completedTasks = jobInfo.Tasks.Count(t => t.State == TimelineRecordStatus.Completed);
-            var totalTasks = jobInfo.Tasks.Count;
-            _ansiConsole.WriteLine($"{jobInfo.Name} - {jobState}{FormatLogId(jobInfo.LogId)} (Tasks: {completedTasks}/{totalTasks} complete)");
-        }
+        writer.WriteTree(stageNodes);
     }
 
-    private void DisplayJob(BuildTimelineInfo timeline, string stageName, string jobName)
+    private static TreeNode BuildStageNode(TimelineStageInfo stage, int depth)
     {
-        var stageInfo = timeline.Stages.FirstOrDefault(s =>
-            s.Name.Equals(stageName, StringComparison.OrdinalIgnoreCase)
-        );
+        var completedJobs = stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
+        var totalJobs = stage.Jobs.Count;
+        var label = $"{stage.Name} ({GetStateLabel(stage.State, stage.Result)}) — Jobs: {completedJobs}/{totalJobs} complete";
 
-        if (stageInfo is null)
-        {
-            var available = string.Join(", ", timeline.Stages.Select(s => s.Name));
-            throw new UserFacingException($"Stage '{stageName}' not found. Available stages: {available}");
-        }
+        List<TreeNode>? children = depth >= 2
+            ? stage.Jobs.Select(job => BuildJobNode(job, depth)).ToList()
+            : null;
 
-        var jobInfo = stageInfo.Jobs.FirstOrDefault(j => j.Name.Equals(jobName, StringComparison.OrdinalIgnoreCase));
+        return new TreeNode(label, children: children);
+    }
 
-        if (jobInfo is null)
-        {
-            var available = string.Join(", ", stageInfo.Jobs.Select(j => j.Name));
-            throw new UserFacingException(
-                $"Job '{jobName}' not found in stage '{stageName}'. Available jobs: {available}"
-            );
-        }
+    private static TreeNode BuildJobNode(TimelineJobInfo job, int depth)
+    {
+        var label = $"{job.Name} ({GetStateLabel(job.State, job.Result)})";
 
-        var jobState = GetStateLabel(jobInfo.State, jobInfo.Result);
-        var completedTasks = jobInfo.Tasks.Count(t => t.State == TimelineRecordStatus.Completed);
-        var totalTasks = jobInfo.Tasks.Count;
+        List<TreeNode>? children = depth >= 3
+            ? job.Tasks.Select(BuildTaskNode).ToList()
+            : null;
 
-        _ansiConsole.MarkupLineInterpolated(
-            $"[bold]{stageInfo.Name}[/] > [bold]{jobInfo.Name}[/] - {jobState}{FormatLogId(jobInfo.LogId)} (Tasks: {completedTasks}/{totalTasks} complete)"
-        );
-        _ansiConsole.WriteLine();
+        return new TreeNode(label, children: children);
+    }
 
-        foreach (var taskInfo in jobInfo.Tasks)
-        {
-            var taskState = GetStateLabel(taskInfo.State, taskInfo.Result);
-            _ansiConsole.WriteLine($"{taskInfo.Name} - {taskState}{FormatLogId(taskInfo.LogId)}");
-        }
+    private static TreeNode BuildTaskNode(TimelineTaskInfo task)
+    {
+        var label = $"{task.Name} ({GetStateLabel(task.State, task.Result)})";
+        return new TreeNode(label);
     }
 
     private static string GetStateLabel(TimelineRecordStatus state, PipelineRunResult result) =>
@@ -161,9 +111,11 @@ internal sealed class StatusCommand(
             _ => "Unknown",
         };
 
-    /// <summary>
-    /// Derives the overall result label from the worst stage result when all stages are completed.
-    /// </summary>
+    private static string GetOverallState(BuildTimelineInfo timeline) =>
+        timeline.Stages.Any(s => s.State == TimelineRecordStatus.InProgress) ? "Running"
+        : timeline.Stages.All(s => s.State == TimelineRecordStatus.Completed) ? GetOverallResult(timeline)
+        : "Pending";
+
     private static string GetOverallResult(BuildTimelineInfo timeline)
     {
         var worstResult = timeline.Stages.Select(s => s.Result).Aggregate(PipelineRunResult.None, WorstOf);
@@ -192,7 +144,4 @@ internal sealed class StatusCommand(
             PipelineRunResult.Failed => 4,
             _ => -1,
         };
-
-    private static string FormatLogId(int? logId) =>
-        logId is not null ? $" (Log: {logId})" : "";
 }

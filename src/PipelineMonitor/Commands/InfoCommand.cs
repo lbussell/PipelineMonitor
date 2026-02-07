@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 using ConsoleAppFramework;
+using Markout;
 using PipelineMonitor.AzureDevOps;
 using PipelineMonitor.AzureDevOps.Yaml;
+using PipelineMonitor.Display;
 using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
@@ -25,24 +27,14 @@ internal sealed class InfoCommand(
     {
         var pipeline = await _pipelineResolver.GetLocalPipelineAsync(definitionPath);
 
-        _ansiConsole.WriteLine();
-        _ansiConsole.Display(pipeline);
-
         var variablesTask = _pipelinesService.GetVariablesAsync(pipeline);
         var yamlTask = _pipelineYamlService.ParseAsync(pipeline.DefinitionFile.FullName);
 
         var variables = await variablesTask;
-        if (variables.Count > 0)
-        {
-            _ansiConsole.H2("Variables");
-            _ansiConsole.DisplayVariables(variables);
-        }
-
         var pipelineYaml = await yamlTask;
-        if (pipelineYaml is not null && pipelineYaml.Parameters.Count > 0)
-        {
-            _ansiConsole.H2("Parameters");
-            _ansiConsole.DisplayParameters(pipelineYaml.Parameters);
-        }
+
+        var view = PipelineInfoView.From(pipeline, variables, pipelineYaml?.Parameters);
+        MarkoutSerializer.Serialize(view, _ansiConsole.Profile.Out.Writer, PipelineMonitorMarkoutContext.Default);
+        _ansiConsole.WriteLine();
     }
 }
