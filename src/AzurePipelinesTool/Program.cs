@@ -58,5 +58,6 @@ consoleAppBuilder.Add<StatusCommand>();
 consoleAppBuilder.Add<CancelCommand>();
 consoleAppBuilder.Add<WaitCommand>();
 consoleAppBuilder.Add<LogsCommand>();
+consoleAppBuilder.Add<LlmsTxtCommand>();
 
 await consoleAppBuilder.RunAsync(args);
