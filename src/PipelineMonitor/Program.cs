@@ -13,6 +13,7 @@ using PipelineMonitor.Authentication;
 using PipelineMonitor.AzureDevOps;
 using PipelineMonitor.AzureDevOps.Yaml;
 using PipelineMonitor.Commands;
+using PipelineMonitor.Display;
 using PipelineMonitor.Filters;
 using PipelineMonitor.Git;
 using PipelineMonitor.Logging;

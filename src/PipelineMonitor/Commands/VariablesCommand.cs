@@ -3,7 +3,9 @@
 
 using System.Text.Json;
 using ConsoleAppFramework;
+using Markout;
 using PipelineMonitor.AzureDevOps;
+using PipelineMonitor.Display;
 using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
@@ -34,7 +36,14 @@ internal sealed class VariablesCommand(
             return;
         }
 
-        _ansiConsole.DisplayVariables(variables);
+        var rows = variables.Select(VariableRowView.From).ToList();
+
+        var writer = new MarkoutWriter(_ansiConsole.Profile.Out.Writer);
+        writer.WriteTableStart("Name", "Value", "Secret", "Settable");
+        foreach (var row in rows)
+            writer.WriteTableRow(row.Name, row.Value, row.Secret ? "yes" : "no", row.Settable ? "yes" : "no");
+        writer.WriteTableEnd();
+        writer.Flush();
     }
 
     [Command("variables export")]

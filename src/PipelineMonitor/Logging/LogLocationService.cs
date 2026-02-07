@@ -4,6 +4,7 @@
 using Microsoft.Extensions.Hosting;
 using NLog;
 using NLog.Targets;
+using PipelineMonitor.Display;
 
 namespace PipelineMonitor.Logging;
 

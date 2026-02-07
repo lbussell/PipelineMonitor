@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using ConsoleAppFramework;
 using PipelineMonitor.AzureDevOps;
+using PipelineMonitor.Display;
 using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
@@ -59,7 +60,7 @@ internal sealed class WaitCommand(
                 return;
             }
 
-            _ansiConsole.DisplayTimelineProgress(timeline, stopwatch.Elapsed, intervalSeconds);
+            DisplayTimelineProgress(timeline, stopwatch.Elapsed, intervalSeconds);
 
             await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), cancellationToken);
             intervalSeconds = Math.Min(intervalSeconds + IntervalIncrementSeconds, MaxIntervalSeconds);
@@ -83,6 +84,31 @@ internal sealed class WaitCommand(
 
         _ansiConsole.WriteLine();
         _interactionService.DisplaySubtleMessage($"View details: `status {buildId}`");
+    }
+
+    private void DisplayTimelineProgress(BuildTimelineInfo timeline, TimeSpan elapsed, int nextCheckSeconds)
+    {
+        var allJobs = timeline.Stages.SelectMany(s => s.Jobs).ToList();
+
+        _ansiConsole.WriteLine(FormatStatusCounts("Stages", timeline.Stages.Select(s => s.State)));
+        _ansiConsole.WriteLine(FormatStatusCounts("Jobs", allJobs.Select(j => j.State)));
+        _ansiConsole.WriteLine($"Elapsed: {FormatElapsed(elapsed)}. Next check in {nextCheckSeconds}s...");
+        _ansiConsole.WriteLine();
+    }
+
+    private static string FormatStatusCounts(string label, IEnumerable<TimelineRecordStatus> states)
+    {
+        var counts = states.GroupBy(s => s).ToDictionary(g => g.Key, g => g.Count());
+
+        List<string> parts = [];
+        if (counts.TryGetValue(TimelineRecordStatus.Completed, out var completed))
+            parts.Add($"{completed} completed");
+        if (counts.TryGetValue(TimelineRecordStatus.InProgress, out var inProgress))
+            parts.Add($"{inProgress} in progress");
+        if (counts.TryGetValue(TimelineRecordStatus.Pending, out var pending))
+            parts.Add($"{pending} pending");
+
+        return $"{label}: {string.Join(", ", parts)}";
     }
 
     private static bool HasFailure(BuildTimelineInfo timeline) =>

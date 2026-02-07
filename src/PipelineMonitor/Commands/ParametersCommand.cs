@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 using ConsoleAppFramework;
-using PipelineMonitor.AzureDevOps;
+using Markout;
 using PipelineMonitor.AzureDevOps.Yaml;
+using PipelineMonitor.Display;
 using Spectre.Console;
 
 namespace PipelineMonitor.Commands;
@@ -35,8 +36,15 @@ internal sealed class ParametersCommand(
             return;
         }
 
-        _ansiConsole.WriteLine("Parameters:");
-        _ansiConsole.WriteLine();
-        _ansiConsole.DisplayParameters(pipelineYaml.Parameters);
+        var rows = pipelineYaml.Parameters.Select(ParameterRowView.From).ToList();
+
+        var writer = new MarkoutWriter(_ansiConsole.Profile.Out.Writer);
+        writer.WriteTableStart("Name", "Type", "Default", "Display Name", "Values");
+
+        foreach (var row in rows)
+            writer.WriteTableRow(row.Name, row.Type, row.Default ?? "", row.DisplayName ?? "", row.Values ?? "");
+
+        writer.WriteTableEnd();
+        writer.Flush();
     }
 }
