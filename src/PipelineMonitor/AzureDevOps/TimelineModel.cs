@@ -46,6 +46,7 @@ internal sealed record BuildTimelineInfo(ImmutableList<TimelineStageInfo> Stages
             State: ToState(stage.State),
             Result: ToResult(stage.Result),
             Order: stage.Order,
+            LogId: stage.Log?.Id,
             Jobs: jobs
         );
     }
@@ -58,7 +59,8 @@ internal sealed record BuildTimelineInfo(ImmutableList<TimelineStageInfo> Stages
                 Name: task.Name,
                 State: ToState(task.State),
                 Result: ToResult(task.Result),
-                Order: task.Order
+                Order: task.Order,
+                LogId: task.Log?.Id
             ))
             .ToImmutableList();
 
@@ -67,6 +69,7 @@ internal sealed record BuildTimelineInfo(ImmutableList<TimelineStageInfo> Stages
             State: ToState(job.State),
             Result: ToResult(job.Result),
             Order: job.Order,
+            LogId: job.Log?.Id,
             Tasks: tasks
         );
     }
@@ -130,6 +133,7 @@ internal sealed record TimelineStageInfo(
     TimelineRecordStatus State,
     PipelineRunResult Result,
     int? Order,
+    int? LogId,
     ImmutableList<TimelineJobInfo> Jobs
 );
 
@@ -138,7 +142,8 @@ internal sealed record TimelineJobInfo(
     TimelineRecordStatus State,
     PipelineRunResult Result,
     int? Order,
+    int? LogId,
     ImmutableList<TimelineTaskInfo> Tasks
 );
 
-internal sealed record TimelineTaskInfo(string Name, TimelineRecordStatus State, PipelineRunResult Result, int? Order);
+internal sealed record TimelineTaskInfo(string Name, TimelineRecordStatus State, PipelineRunResult Result, int? Order, int? LogId);

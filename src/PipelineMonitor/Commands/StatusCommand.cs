@@ -65,7 +65,7 @@ internal sealed class StatusCommand(
             var stateLabel = GetStateLabel(stageInfo.State, stageInfo.Result);
             var completedJobs = stageInfo.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
             var totalJobs = stageInfo.Jobs.Count;
-            _ansiConsole.WriteLine($"{stageInfo.Name} - {stateLabel} (Jobs: {completedJobs}/{totalJobs} complete)");
+            _ansiConsole.WriteLine($"{stageInfo.Name} - {stateLabel}{FormatLogId(stageInfo.LogId)} (Jobs: {completedJobs}/{totalJobs} complete)");
         }
 
         var isRunning = overallState is "Running" or "Pending";
@@ -93,7 +93,7 @@ internal sealed class StatusCommand(
         var totalJobs = stageInfo.Jobs.Count;
 
         _ansiConsole.MarkupLineInterpolated(
-            $"[bold]{stageInfo.Name}[/] - {stateLabel} (Jobs: {completedJobs}/{totalJobs} complete)"
+            $"[bold]{stageInfo.Name}[/] - {stateLabel}{FormatLogId(stageInfo.LogId)} (Jobs: {completedJobs}/{totalJobs} complete)"
         );
         _ansiConsole.WriteLine();
 
@@ -102,7 +102,7 @@ internal sealed class StatusCommand(
             var jobState = GetStateLabel(jobInfo.State, jobInfo.Result);
             var completedTasks = jobInfo.Tasks.Count(t => t.State == TimelineRecordStatus.Completed);
             var totalTasks = jobInfo.Tasks.Count;
-            _ansiConsole.WriteLine($"{jobInfo.Name} - {jobState} (Tasks: {completedTasks}/{totalTasks} complete)");
+            _ansiConsole.WriteLine($"{jobInfo.Name} - {jobState}{FormatLogId(jobInfo.LogId)} (Tasks: {completedTasks}/{totalTasks} complete)");
         }
     }
 
@@ -133,14 +133,14 @@ internal sealed class StatusCommand(
         var totalTasks = jobInfo.Tasks.Count;
 
         _ansiConsole.MarkupLineInterpolated(
-            $"[bold]{stageInfo.Name}[/] > [bold]{jobInfo.Name}[/] - {jobState} (Tasks: {completedTasks}/{totalTasks} complete)"
+            $"[bold]{stageInfo.Name}[/] > [bold]{jobInfo.Name}[/] - {jobState}{FormatLogId(jobInfo.LogId)} (Tasks: {completedTasks}/{totalTasks} complete)"
         );
         _ansiConsole.WriteLine();
 
         foreach (var taskInfo in jobInfo.Tasks)
         {
             var taskState = GetStateLabel(taskInfo.State, taskInfo.Result);
-            _ansiConsole.WriteLine($"{taskInfo.Name} - {taskState}");
+            _ansiConsole.WriteLine($"{taskInfo.Name} - {taskState}{FormatLogId(taskInfo.LogId)}");
         }
     }
 
@@ -192,4 +192,7 @@ internal sealed class StatusCommand(
             PipelineRunResult.Failed => 4,
             _ => -1,
         };
+
+    private static string FormatLogId(int? logId) =>
+        logId is not null ? $" (Log: {logId})" : "";
 }

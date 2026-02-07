@@ -415,4 +415,23 @@ internal sealed class PipelinesService(
         await buildsClient.UpdateBuildAsync(build, project.Name, buildId, cancellationToken: ct);
 #pragma warning restore CS0618
     }
+
+    public async Task<Stream> GetBuildLogAsync(
+        OrganizationInfo org,
+        ProjectInfo project,
+        int buildId,
+        int logId,
+        CancellationToken ct = default
+    )
+    {
+        var connection = _vssConnectionProvider.GetConnection(org.Uri);
+        var buildsClient = connection.GetClient<BuildHttpClient>();
+
+        return await buildsClient.GetBuildLogAsync(
+            project: project.Name,
+            buildId: buildId,
+            logId: logId,
+            cancellationToken: ct
+        );
+    }
 }

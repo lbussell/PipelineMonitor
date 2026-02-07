@@ -56,6 +56,7 @@ consoleAppBuilder.Add<RunCommand>();
 consoleAppBuilder.Add<StatusCommand>();
 consoleAppBuilder.Add<CancelCommand>();
 consoleAppBuilder.Add<WaitCommand>();
+consoleAppBuilder.Add<LogsCommand>();
 
 // In-development commands
 #if DEBUG
