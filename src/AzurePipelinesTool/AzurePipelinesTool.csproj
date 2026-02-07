@@ -101,4 +101,10 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup Label="Embedded Resources">
+    <EmbeddedResource Include="../../skills/azure-pipelines-tool/SKILL.md">
+      <LogicalName>SKILL.md</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>
