@@ -23,8 +23,7 @@
     <PackageId>azp</PackageId>
     <Description>CLI for interacting with Azure Pipelines</Description>
 
-    <!-- TODO: Add README file -->
-    <!-- <PackageReadmeFile></PackageReadmeFile> -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- TODO: Add a package icon.
       Use a 128x128 PNG with transparent background. -->
     <!-- <PackageIcon></PackageIcon> -->
@@ -42,7 +41,7 @@
     <!-- Follow https://semver.org/spec/v2.0.0.html -->
     <!-- Also update version in .claude-plugin/plugin.json and .claude-plugin/marketplace.json -->
     <MajorVersion>0</MajorVersion>
-    <MinorVersion>1</MinorVersion>
+    <MinorVersion>2</MinorVersion>
     <PatchVersion>0</PatchVersion>
 
     <!-- Build date in format YYYY.M.D (no leading zeros for SemVer compliance) -->
@@ -99,6 +98,10 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup Label="Package Content">
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
   <ItemGroup Label="Embedded Resources">
