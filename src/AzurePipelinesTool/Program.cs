@@ -59,5 +59,6 @@ consoleAppBuilder.Add<CancelCommand>();
 consoleAppBuilder.Add<WaitCommand>();
 consoleAppBuilder.Add<LogsCommand>();
 consoleAppBuilder.Add<LlmsTxtCommand>();
+consoleAppBuilder.Add<InstallSkillCommand>();
 
 await consoleAppBuilder.RunAsync(args);
