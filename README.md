@@ -1,5 +1,12 @@
 # `azp` - Azure Pipelines Tool
 
+[![Build](https://github.com/lbussell/AzurePipelinesTool/workflows/Build/badge.svg)](https://github.com/lbussell/AzurePipelinesTool/actions/workflows/build.yml)
+[![NuGet](https://img.shields.io/nuget/vpre/azp)](https://www.nuget.org/packages/azp)
+[![License: MIT](https://img.shields.io/github/license/lbussell/AzurePipelinesTool)](LICENSE)
+
+[![Agent Skills: Copilot](https://img.shields.io/badge/Copilot-Agent%20Skill-8A2BE2?logo=github)](https://github.com/lbussell/AzurePipelinesTool/blob/main/README.md#agent-skill)
+[![Agent Skills: Claude](https://img.shields.io/badge/Claude-Agent%20Skill-DE7356?logo=anthropic)](https://github.com/lbussell/AzurePipelinesTool/blob/main/README.md#agent-skill)
+
 A CLI for interacting with Azure Pipelines from the terminal.
 
 ## Quick Start
@@ -89,7 +96,7 @@ azp cancel 12345
 | `-d 1\|2\|3` | Tree depth: 1=stages, 2=+jobs (default), 3=+tasks | `status` |
 | `-f` | Exit with non-zero code on failure/cancellation | `wait` |
 
-## `azp` Agent Skill
+## Agent Skill
 
 This repo includes a skill which shows AI coding assistants how to use `azp` to develop Azure Pipelines on your behalf.
 With the `azure-pipelines-tool` skill, agents can check pipeline syntax, queue pipeline runs, investigate failing pipelines, and even wait for runs to complete and react accordingly.
