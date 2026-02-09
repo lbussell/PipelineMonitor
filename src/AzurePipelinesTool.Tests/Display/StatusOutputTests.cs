@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 using AzurePipelinesTool.AzureDevOps;
+using AzurePipelinesTool.Display;
 using Markout;
 
 namespace AzurePipelinesTool.Tests.Display;
@@ -9,6 +10,9 @@ namespace AzurePipelinesTool.Tests.Display;
 [TestClass]
 public class StatusOutputTests : VerifyBase
 {
+    private const string TestPipelineName = "docker-tools-imagebuilder-unofficial";
+    private const int TestBuildId = 12345;
+
     [TestMethod]
     public Task StatusTree_Succeeded_Depth2() => Verify(RenderStatusOutput(TestData.SucceededTimeline, depth: 2));
 
@@ -35,74 +39,10 @@ public class StatusOutputTests : VerifyBase
         using var writer = new StringWriter();
         var markout = new MarkoutWriter(writer);
 
-        var completedStages = timeline.Stages.Count(s => s.State == TimelineRecordStatus.Completed);
-        var totalStages = timeline.Stages.Count;
-        var overallState =
-            timeline.Stages.Any(s => s.State == TimelineRecordStatus.InProgress) ? "Running"
-            : timeline.Stages.All(s => s.State == TimelineRecordStatus.Completed) ? GetOverallResult(timeline)
-            : "Pending";
-
-        markout.WriteParagraph($"{overallState} — {completedStages}/{totalStages} stages complete");
-
-        var stageNodes = timeline.Stages.Select(stage => BuildStageNode(stage, depth)).ToList();
-        markout.WriteTree(stageNodes);
+        writer.WriteLine(TimelineFormatter.FormatSummaryLine(TestPipelineName, TestBuildId, timeline));
+        markout.WriteTree(TimelineFormatter.BuildStageNodes(timeline, depth));
         markout.Flush();
 
         return writer.ToString();
     }
-
-    private static string GetOverallResult(BuildTimelineInfo timeline)
-    {
-        var results = timeline.Stages.Select(s => s.Result).ToList();
-        if (results.Any(r => r == PipelineRunResult.Failed))
-            return "Failed";
-        if (results.Any(r => r == PipelineRunResult.Canceled))
-            return "Canceled";
-        if (results.Any(r => r == PipelineRunResult.PartiallySucceeded))
-            return "Partially Succeeded";
-        return results.All(r => r is PipelineRunResult.Succeeded or PipelineRunResult.Skipped)
-            ? "Succeeded"
-            : "Completed";
-    }
-
-    private static TreeNode BuildStageNode(TimelineStageInfo stage, int depth)
-    {
-        var completedJobs = stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
-        var totalJobs = stage.Jobs.Count;
-        var label =
-            $"{stage.Name} ({GetStateLabel(stage.State, stage.Result)}) — Jobs: {completedJobs}/{totalJobs} complete";
-
-        List<TreeNode>? children = depth >= 2 ? stage.Jobs.Select(job => BuildJobNode(job, depth)).ToList() : null;
-
-        return new TreeNode(label, children: children);
-    }
-
-    private static TreeNode BuildJobNode(TimelineJobInfo job, int depth)
-    {
-        var label = $"{job.Name} ({GetStateLabel(job.State, job.Result)})";
-
-        List<TreeNode>? children = depth >= 3 ? job.Tasks.Select(BuildTaskNode).ToList() : null;
-
-        return new TreeNode(label, children: children);
-    }
-
-    private static TreeNode BuildTaskNode(TimelineTaskInfo task) =>
-        new($"{task.Name} ({GetStateLabel(task.State, task.Result)})");
-
-    private static string GetStateLabel(TimelineRecordStatus state, PipelineRunResult result) =>
-        state switch
-        {
-            TimelineRecordStatus.Completed => result switch
-            {
-                PipelineRunResult.Succeeded => "Succeeded",
-                PipelineRunResult.PartiallySucceeded => "Partially Succeeded",
-                PipelineRunResult.Failed => "Failed",
-                PipelineRunResult.Canceled => "Canceled",
-                PipelineRunResult.Skipped => "Skipped",
-                _ => "Completed",
-            },
-            TimelineRecordStatus.InProgress => "Running",
-            TimelineRecordStatus.Pending => "Pending",
-            _ => "Unknown",
-        };
 }

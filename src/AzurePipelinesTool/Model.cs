@@ -56,3 +56,5 @@ internal sealed record StageInfo(string Name, string State, PipelineRunResult Re
 internal sealed record PipelineVariableInfo(string Name, string Value, bool IsSecret, bool AllowOverride);
 
 internal sealed record QueuedPipelineRunInfo(RunId Id, string Name, string WebUrl);
+
+internal sealed record BuildSummaryInfo(string PipelineName);

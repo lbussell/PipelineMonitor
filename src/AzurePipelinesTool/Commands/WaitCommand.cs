@@ -38,6 +38,7 @@ internal sealed class WaitCommand(
     )
     {
         var (org, project, buildId) = await _buildIdResolver.ResolveAsync(buildIdOrUrl);
+        var summary = await _pipelinesService.GetBuildSummaryAsync(org, project, buildId, cancellationToken);
 
         _ansiConsole.WriteLine($"Waiting for pipeline run {buildId}...");
         _ansiConsole.WriteLine();
@@ -52,7 +53,7 @@ internal sealed class WaitCommand(
 
             if (isComplete)
             {
-                DisplayFinalSummary(timeline, buildId, stopwatch.Elapsed);
+                DisplayFinalSummary(timeline, summary.PipelineName, buildId, stopwatch.Elapsed);
 
                 if (failOnError && HasFailure(timeline))
                     Environment.ExitCode = 1;
@@ -67,19 +68,20 @@ internal sealed class WaitCommand(
         }
     }
 
-    private void DisplayFinalSummary(BuildTimelineInfo timeline, int buildId, TimeSpan elapsed)
+    private void DisplayFinalSummary(BuildTimelineInfo timeline, string pipelineName, int buildId, TimeSpan elapsed)
     {
-        var overallResult = GetOverallResult(timeline);
+        var summaryLine = TimelineFormatter.FormatSummaryLine(pipelineName, buildId, timeline);
 
-        _ansiConsole.WriteLine($"{overallResult} - {FormatElapsed(elapsed)} elapsed");
+        _ansiConsole.WriteLine($"{summaryLine} - {FormatElapsed(elapsed)} elapsed");
         _ansiConsole.WriteLine();
 
         foreach (var stage in timeline.Stages)
         {
-            var stateLabel = GetStateLabel(stage.State, stage.Result);
+            var status = TimelineFormatter.GetStatusLabel(stage.State, stage.Result);
             var completedJobs = stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
             var totalJobs = stage.Jobs.Count;
-            _ansiConsole.WriteLine($"{stage.Name} - {stateLabel} (Jobs: {completedJobs}/{totalJobs} complete)");
+            var logPrefix = stage.LogId is not null ? $" #{stage.LogId}" : "";
+            _ansiConsole.WriteLine($"Stage{logPrefix}: {stage.Name} {status} (Jobs: {completedJobs}/{totalJobs})");
         }
 
         _ansiConsole.WriteLine();
@@ -113,52 +115,6 @@ internal sealed class WaitCommand(
 
     private static bool HasFailure(BuildTimelineInfo timeline) =>
         timeline.Stages.Any(s => s.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled);
-
-    private static string GetOverallResult(BuildTimelineInfo timeline)
-    {
-        var worstResult = timeline.Stages.Select(s => s.Result).Aggregate(PipelineRunResult.None, WorstOf);
-
-        return worstResult switch
-        {
-            PipelineRunResult.Succeeded => "Succeeded",
-            PipelineRunResult.PartiallySucceeded => "Partially Succeeded",
-            PipelineRunResult.Failed => "Failed",
-            PipelineRunResult.Canceled => "Canceled",
-            PipelineRunResult.Skipped => "Skipped",
-            _ => "Completed",
-        };
-    }
-
-    private static PipelineRunResult WorstOf(PipelineRunResult a, PipelineRunResult b) =>
-        Severity(a) > Severity(b) ? a : b;
-
-    private static int Severity(PipelineRunResult result) =>
-        result switch
-        {
-            PipelineRunResult.Skipped => 0,
-            PipelineRunResult.Succeeded => 1,
-            PipelineRunResult.PartiallySucceeded => 2,
-            PipelineRunResult.Canceled => 3,
-            PipelineRunResult.Failed => 4,
-            _ => -1,
-        };
-
-    private static string GetStateLabel(TimelineRecordStatus state, PipelineRunResult result) =>
-        state switch
-        {
-            TimelineRecordStatus.Completed => result switch
-            {
-                PipelineRunResult.Succeeded => "Succeeded",
-                PipelineRunResult.PartiallySucceeded => "Partially Succeeded",
-                PipelineRunResult.Failed => "Failed",
-                PipelineRunResult.Canceled => "Canceled",
-                PipelineRunResult.Skipped => "Skipped",
-                _ => "Completed",
-            },
-            TimelineRecordStatus.InProgress => "Running",
-            TimelineRecordStatus.Pending => "Pending",
-            _ => "Unknown",
-        };
 
     internal static string FormatElapsed(TimeSpan elapsed) =>
         elapsed.TotalHours >= 1 ? $"{(int)elapsed.TotalHours}h {elapsed.Minutes}m {elapsed.Seconds}s"

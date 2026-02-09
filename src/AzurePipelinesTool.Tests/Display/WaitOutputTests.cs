@@ -3,12 +3,15 @@
 
 using AzurePipelinesTool.AzureDevOps;
 using AzurePipelinesTool.Commands;
+using AzurePipelinesTool.Display;
 
 namespace AzurePipelinesTool.Tests.Display;
 
 [TestClass]
 public class WaitOutputTests : VerifyBase
 {
+    private const string TestPipelineName = "docker-tools-imagebuilder-unofficial";
+
     [TestMethod]
     public void FormatElapsed_Seconds() => Assert.AreEqual("42s", WaitCommand.FormatElapsed(TimeSpan.FromSeconds(42)));
 
@@ -54,16 +57,17 @@ public class WaitOutputTests : VerifyBase
     {
         using var writer = new StringWriter();
 
-        var overallResult = GetOverallResult(timeline);
-        writer.WriteLine($"{overallResult} - {WaitCommand.FormatElapsed(elapsed)} elapsed");
+        var summaryLine = TimelineFormatter.FormatSummaryLine(TestPipelineName, buildId, timeline);
+        writer.WriteLine($"{summaryLine} - {WaitCommand.FormatElapsed(elapsed)} elapsed");
         writer.WriteLine();
 
         foreach (var stage in timeline.Stages)
         {
-            var stateLabel = GetStateLabel(stage.State, stage.Result);
+            var status = TimelineFormatter.GetStatusLabel(stage.State, stage.Result);
             var completedJobs = stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
             var totalJobs = stage.Jobs.Count;
-            writer.WriteLine($"{stage.Name} - {stateLabel} (Jobs: {completedJobs}/{totalJobs} complete)");
+            var logPrefix = stage.LogId is not null ? $" #{stage.LogId}" : "";
+            writer.WriteLine($"Stage{logPrefix}: {stage.Name} {status} (Jobs: {completedJobs}/{totalJobs})");
         }
 
         return writer.ToString();
@@ -98,35 +102,4 @@ public class WaitOutputTests : VerifyBase
 
         return $"{label}: {string.Join(", ", parts)}";
     }
-
-    private static string GetOverallResult(BuildTimelineInfo timeline)
-    {
-        var results = timeline.Stages.Select(s => s.Result).ToList();
-        if (results.Any(r => r == PipelineRunResult.Failed))
-            return "Failed";
-        if (results.Any(r => r == PipelineRunResult.Canceled))
-            return "Canceled";
-        if (results.Any(r => r == PipelineRunResult.PartiallySucceeded))
-            return "Partially Succeeded";
-        return results.All(r => r is PipelineRunResult.Succeeded or PipelineRunResult.Skipped)
-            ? "Succeeded"
-            : "Completed";
-    }
-
-    private static string GetStateLabel(TimelineRecordStatus state, PipelineRunResult result) =>
-        state switch
-        {
-            TimelineRecordStatus.Completed => result switch
-            {
-                PipelineRunResult.Succeeded => "Succeeded",
-                PipelineRunResult.PartiallySucceeded => "Partially Succeeded",
-                PipelineRunResult.Failed => "Failed",
-                PipelineRunResult.Canceled => "Canceled",
-                PipelineRunResult.Skipped => "Skipped",
-                _ => "Completed",
-            },
-            TimelineRecordStatus.InProgress => "Running",
-            TimelineRecordStatus.Pending => "Pending",
-            _ => "Unknown",
-        };
 }

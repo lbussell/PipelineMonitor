@@ -1,5 +1,4 @@
-﻿Succeeded — 3/3 stages complete
-
-├─ Build (Succeeded) — Jobs: 2/2 complete
-├─ Test (Succeeded) — Jobs: 1/1 complete
-└─ Publish (Succeeded) — Jobs: 1/1 complete
+﻿[OK] Build #12345 | docker-tools-imagebuilder-unofficial | 3/3 Stages
+├─ [OK] Stage #10 | Build | 2/2 Jobs
+├─ [OK] Stage #20 | Test | 1/1 Jobs
+└─ [OK] Stage #30 | Publish | 1/1 Jobs

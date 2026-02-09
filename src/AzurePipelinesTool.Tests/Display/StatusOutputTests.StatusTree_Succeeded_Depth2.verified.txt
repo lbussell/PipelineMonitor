@@ -1,9 +1,8 @@
-﻿Succeeded — 3/3 stages complete
-
-├─ Build (Succeeded) — Jobs: 2/2 complete
-│  ├─ Build linux-amd64 (Succeeded)
-│  └─ Build linux-arm64 (Succeeded)
-├─ Test (Succeeded) — Jobs: 1/1 complete
-│  └─ Test linux-amd64 (Succeeded)
-└─ Publish (Succeeded) — Jobs: 1/1 complete
-   └─ Publish images (Succeeded)
+﻿[OK] Build #12345 | docker-tools-imagebuilder-unofficial | 3/3 Stages
+├─ [OK] Stage #10 | Build | 2/2 Jobs
+│  ├─ [OK] Job #11 | Build linux-amd64 | 3/3 Tasks
+│  └─ [OK] Job #12 | Build linux-arm64 | 2/2 Tasks
+├─ [OK] Stage #20 | Test | 1/1 Jobs
+│  └─ [OK] Job #21 | Test linux-amd64 | 1/1 Tasks
+└─ [OK] Stage #30 | Publish | 1/1 Jobs
+   └─ [OK] Job #31 | Publish images | 1/1 Tasks

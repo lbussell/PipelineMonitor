@@ -98,14 +98,14 @@ internal static class TestData
                     TimelineRecordStatus.Completed,
                     PipelineRunResult.Succeeded,
                     1,
-                    null,
+                    10,
                     [
                         new TimelineJobInfo(
                             "Build linux-amd64",
                             TimelineRecordStatus.Completed,
                             PipelineRunResult.Succeeded,
                             1,
-                            null,
+                            11,
                             [
                                 new TimelineTaskInfo(
                                     "Initialize job",
@@ -135,7 +135,7 @@ internal static class TestData
                             TimelineRecordStatus.Completed,
                             PipelineRunResult.Succeeded,
                             2,
-                            null,
+                            12,
                             [
                                 new TimelineTaskInfo(
                                     "Initialize job",
@@ -160,14 +160,14 @@ internal static class TestData
                     TimelineRecordStatus.Completed,
                     PipelineRunResult.Succeeded,
                     2,
-                    null,
+                    20,
                     [
                         new TimelineJobInfo(
                             "Test linux-amd64",
                             TimelineRecordStatus.Completed,
                             PipelineRunResult.Succeeded,
                             1,
-                            null,
+                            21,
                             [
                                 new TimelineTaskInfo(
                                     "Run tests",
@@ -185,14 +185,14 @@ internal static class TestData
                     TimelineRecordStatus.Completed,
                     PipelineRunResult.Succeeded,
                     3,
-                    null,
+                    30,
                     [
                         new TimelineJobInfo(
                             "Publish images",
                             TimelineRecordStatus.Completed,
                             PipelineRunResult.Succeeded,
                             1,
-                            null,
+                            31,
                             [
                                 new TimelineTaskInfo(
                                     "Push to ACR",
@@ -219,14 +219,14 @@ internal static class TestData
                     TimelineRecordStatus.Completed,
                     PipelineRunResult.Succeeded,
                     1,
-                    null,
+                    10,
                     [
                         new TimelineJobInfo(
                             "Build linux-amd64",
                             TimelineRecordStatus.Completed,
                             PipelineRunResult.Succeeded,
                             1,
-                            null,
+                            11,
                             [
                                 new TimelineTaskInfo(
                                     "Build images",
@@ -244,14 +244,14 @@ internal static class TestData
                     TimelineRecordStatus.Completed,
                     PipelineRunResult.Failed,
                     2,
-                    null,
+                    20,
                     [
                         new TimelineJobInfo(
                             "Test linux-amd64",
                             TimelineRecordStatus.Completed,
                             PipelineRunResult.Failed,
                             1,
-                            null,
+                            21,
                             [
                                 new TimelineTaskInfo(
                                     "Run tests",
@@ -269,14 +269,14 @@ internal static class TestData
                     TimelineRecordStatus.Completed,
                     PipelineRunResult.Skipped,
                     3,
-                    null,
+                    30,
                     [
                         new TimelineJobInfo(
                             "Publish images",
                             TimelineRecordStatus.Completed,
                             PipelineRunResult.Skipped,
                             1,
-                            null,
+                            31,
                             [
                                 new TimelineTaskInfo(
                                     "Push to ACR",
@@ -303,14 +303,14 @@ internal static class TestData
                     TimelineRecordStatus.Completed,
                     PipelineRunResult.Succeeded,
                     1,
-                    null,
+                    10,
                     [
                         new TimelineJobInfo(
                             "Build linux-amd64",
                             TimelineRecordStatus.Completed,
                             PipelineRunResult.Succeeded,
                             1,
-                            null,
+                            11,
                             [
                                 new TimelineTaskInfo(
                                     "Build images",
@@ -328,14 +328,14 @@ internal static class TestData
                     TimelineRecordStatus.InProgress,
                     PipelineRunResult.None,
                     2,
-                    null,
+                    20,
                     [
                         new TimelineJobInfo(
                             "Test linux-amd64",
                             TimelineRecordStatus.InProgress,
                             PipelineRunResult.None,
                             1,
-                            null,
+                            21,
                             [
                                 new TimelineTaskInfo(
                                     "Run tests",

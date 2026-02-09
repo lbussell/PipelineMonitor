@@ -1,8 +1,7 @@
-﻿Failed — 3/3 stages complete
-
-├─ Build (Succeeded) — Jobs: 1/1 complete
-│  └─ Build linux-amd64 (Succeeded)
-├─ Test (Failed) — Jobs: 1/1 complete
-│  └─ Test linux-amd64 (Failed)
-└─ Publish (Skipped) — Jobs: 1/1 complete
-   └─ Publish images (Skipped)
+﻿[FAIL] Build #12345 | docker-tools-imagebuilder-unofficial | 3/3 Stages
+├─ [OK] Stage #10 | Build | 1/1 Jobs
+│  └─ [OK] Job #11 | Build linux-amd64 | 1/1 Tasks
+├─ [FAIL] Stage #20 | Test | 1/1 Jobs
+│  └─ [FAIL] Job #21 | Test linux-amd64 | 1/1 Tasks
+└─ [SKIP] Stage #30 | Publish | 1/1 Jobs
+   └─ [SKIP] Job #31 | Publish images | 1/1 Tasks

@@ -391,6 +391,23 @@ internal sealed class PipelinesService(
         return BuildTimelineInfo.Parse(timeline.Records);
     }
 
+    /// <summary>
+    /// Fetches basic build metadata (pipeline name) for display purposes.
+    /// </summary>
+    public async Task<BuildSummaryInfo> GetBuildSummaryAsync(
+        OrganizationInfo org,
+        ProjectInfo project,
+        int buildId,
+        CancellationToken ct = default
+    )
+    {
+        var connection = _vssConnectionProvider.GetConnection(org.Uri);
+        var buildsClient = connection.GetClient<BuildHttpClient>();
+        var build = await buildsClient.GetBuildAsync(project: project.Name, buildId: buildId, cancellationToken: ct);
+
+        return new BuildSummaryInfo(build.Definition.Name);
+    }
+
     public async Task CancelBuildAsync(
         OrganizationInfo org,
         ProjectInfo project,

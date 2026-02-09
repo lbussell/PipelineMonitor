@@ -1,5 +1,5 @@
-﻿Succeeded - 3m 42s elapsed
+﻿[OK] Build #12345 | docker-tools-imagebuilder-unofficial | 3/3 Stages - 3m 42s elapsed
 
-Build - Succeeded (Jobs: 2/2 complete)
-Test - Succeeded (Jobs: 1/1 complete)
-Publish - Succeeded (Jobs: 1/1 complete)
+Stage #10: Build [OK] (Jobs: 2/2)
+Stage #20: Test [OK] (Jobs: 1/1)
+Stage #30: Publish [OK] (Jobs: 1/1)

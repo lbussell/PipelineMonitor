@@ -1,8 +1,7 @@
-﻿Running — 1/3 stages complete
-
-├─ Build (Succeeded) — Jobs: 1/1 complete
-│  └─ Build linux-amd64 (Succeeded)
-├─ Test (Running) — Jobs: 0/1 complete
-│  └─ Test linux-amd64 (Running)
-└─ Publish (Pending) — Jobs: 0/1 complete
-   └─ Publish images (Pending)
+﻿[RUNNING] Build #12345 | docker-tools-imagebuilder-unofficial | 1/3 Stages
+├─ [OK] Stage #10 | Build | 1/1 Jobs
+│  └─ [OK] Job #11 | Build linux-amd64 | 1/1 Tasks
+├─ [RUNNING] Stage #20 | Test | 0/1 Jobs
+│  └─ [RUNNING] Job #21 | Test linux-amd64 | 0/1 Tasks
+└─ [PENDING] Stage | Publish | 0/1 Jobs
+   └─ [PENDING] Job | Publish images | 0/1 Tasks
