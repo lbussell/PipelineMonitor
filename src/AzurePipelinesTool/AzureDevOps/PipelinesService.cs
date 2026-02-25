@@ -405,7 +405,7 @@ internal sealed class PipelinesService(
         var buildsClient = connection.GetClient<BuildHttpClient>();
         var build = await buildsClient.GetBuildAsync(project: project.Name, buildId: buildId, cancellationToken: ct);
 
-        return new BuildSummaryInfo(build.Definition.Name);
+        return new BuildSummaryInfo(build.Definition.Name, build.Definition.Id, build.SourceBranch);
     }
 
     public async Task CancelBuildAsync(

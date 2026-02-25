@@ -5,6 +5,7 @@ using AzurePipelinesTool.AzureDevOps;
 using AzurePipelinesTool.AzureDevOps.Yaml;
 using AzurePipelinesTool.Display;
 using AzurePipelinesTool.Git;
+using AzurePipelinesTool.Hooks;
 using ConsoleAppFramework;
 using Spectre.Console;
 
@@ -16,7 +17,8 @@ internal sealed class RunCommand(
     PipelineResolver pipelineResolver,
     PipelineYamlService pipelineYamlService,
     PipelinesService pipelinesService,
-    GitService gitService
+    GitService gitService,
+    HookService hookService
 )
 {
     private readonly IAnsiConsole _ansiConsole = ansiConsole;
@@ -25,6 +27,7 @@ internal sealed class RunCommand(
     private readonly PipelineYamlService _pipelineYamlService = pipelineYamlService;
     private readonly PipelinesService _pipelinesService = pipelinesService;
     private readonly GitService _gitService = gitService;
+    private readonly HookService _hookService = hookService;
 
     /// <summary>
     /// Render a pipeline's YAML by expanding template parameters.
@@ -94,6 +97,19 @@ internal sealed class RunCommand(
 
         var branch = await _gitService.GetCurrentBranchAsync();
         var refName = branch is not null ? $"refs/heads/{branch}" : null;
+
+        var hookContext = new HookContext(
+            Org: pipeline.Organization.Name,
+            Project: pipeline.Project.Name,
+            PipelineId: pipeline.Id.Value,
+            PipelineName: pipeline.Name,
+            Ref: refName,
+            BuildId: null,
+            Parameters: templateParameters,
+            Variables: parsedVariables
+        );
+
+        await _hookService.RunPipelineQueueHooksAsync(hookContext);
 
         _ansiConsole.WriteLine($"Queuing pipeline '{pipeline.Name}'...");
 
