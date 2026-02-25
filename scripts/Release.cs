@@ -4,8 +4,7 @@
 // Creates a release by tagging the current commit and pushing the tag.
 // The publish workflow triggers automatically when a version tag is pushed.
 //
-// Usage: dotnet run scripts/Release.cs <version>
-// Example: dotnet run scripts/Release.cs 0.6.0
+// Usage: dotnet run scripts/Release.cs
 
 #:package CliWrap@3.10.0
 #:package Spectre.Console@0.54.1-alpha.0.31
@@ -16,15 +15,20 @@ using CliWrap;
 using CliWrap.Buffered;
 using Spectre.Console;
 
-if (args.Length != 1)
+var git = new CliWrapper("git");
+
+// List existing tags for context
+var existingTags = await git.RunAsync("tag --list --sort=-v:refname");
+if (!string.IsNullOrWhiteSpace(existingTags.StandardOutput))
 {
-    Prompt.Error("Expected a single version argument.");
-    AnsiConsole.MarkupLine("Usage: [blue]dotnet run scripts/Release.cs <version>[/]");
-    AnsiConsole.MarkupLine("Example: [blue]dotnet run scripts/Release.cs 0.6.0[/]");
-    return 1;
+    AnsiConsole.WriteLine();
+    AnsiConsole.MarkupLine("[bold]Existing tags:[/]");
+    foreach (var t in existingTags.StandardOutput.Trim().Split('\n'))
+        AnsiConsole.MarkupLine($"  [dim]{Markup.Escape(t)}[/]");
+    AnsiConsole.WriteLine();
 }
 
-var version = args[0];
+var version = Prompt.Ask("Enter the version to release (e.g. [green]0.6.0[/]):");
 if (!IsValidSemVer(version))
 {
     Prompt.Error($"'{Markup.Escape(version)}' is not a valid SemVer version.");
@@ -32,7 +36,6 @@ if (!IsValidSemVer(version))
 }
 
 var tag = $"v{version}";
-var git = new CliWrapper("git");
 
 Prompt.Info($"Preparing release [green]{Markup.Escape(tag)}[/]");
 

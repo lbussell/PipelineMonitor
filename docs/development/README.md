@@ -51,15 +51,16 @@ No manual version editing is needed in `.csproj` files.
 Use the release script to create and push a release tag:
 
 ```bash
-dotnet run scripts/Release.cs 1.0.0
+dotnet run scripts/Release.cs
 ```
 
 The script:
 
-1. Validates the version and checks for a clean working tree
-2. Creates a `v1.0.0` git tag on the current commit
-3. Pushes the tag to origin
-4. The **Publish NuGet Package** workflow triggers automatically
+1. Lists existing tags for reference
+2. Prompts for the version to release
+3. Creates a `v{version}` git tag on the current commit
+4. Pushes the tag to origin
+5. The **Publish NuGet Package** workflow triggers automatically
 
 After the release, remember to update the version in
 `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
