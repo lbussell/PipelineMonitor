@@ -30,5 +30,6 @@
          This direct reference overrides version 4.8.5 to fix CVE-2024-0056 (GHSA-98g6-xh36-x2p7),
          a high-severity vulnerability allowing encryption bypass on SQL Server connections. -->
     <PackageVersion Include="System.Data.SqlClient" Version="4.8.6" />
+    <PackageVersion Include="MinVer" Version="7.0.0" />
   </ItemGroup>
 </Project>

@@ -2,15 +2,8 @@ name: Build
 on:
   push:
     branches: [main]
-    tags: ['*']
   pull_request:
   workflow_call:
-    inputs:
-      stable-version:
-        description: 'Build as a stable version (no prerelease suffix)'
-        type: boolean
-        required: false
-        default: false
 
 jobs:
   build:
@@ -20,6 +13,9 @@ jobs:
     steps:
       # https://github.com/actions/checkout/releases/tag/v6.0.1
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          fetch-depth: 0
+          filter: tree:0
 
       # https://github.com/actions/setup-dotnet/releases/tag/v5.0.1
       - uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602
@@ -31,7 +27,7 @@ jobs:
         run: dotnet restore
 
       - name: Build and pack
-        run: dotnet pack --no-restore -p:StableVersion=${{ inputs.stable-version }} --output packages
+        run: dotnet pack --no-restore --output packages
 
       - name: Run tests
         run: dotnet test --no-restore --logger trx --results-directory test-results

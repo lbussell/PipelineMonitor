@@ -37,33 +37,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Versioning">
-    <!-- Update these version numbers manually. -->
-    <!-- Follow https://semver.org/spec/v2.0.0.html -->
-    <!-- Also update version in .claude-plugin/plugin.json and .claude-plugin/marketplace.json -->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>5</MinorVersion>
-    <PatchVersion>0</PatchVersion>
-
-    <!-- Build date in format YYYY.M.D (no leading zeros for SemVer compliance) -->
-    <BuildDate>$([System.DateTime]::Now.ToString("yyyy.M.d"))</BuildDate>
-
-    <!-- Pre-release versioning label -->
-    <!-- This should stay the same throughout a given release cycle, or
-         preferably for the entire life of the package. -->
-    <!-- Other options might be: "alpha", "beta", "pre", etc. -->
-    <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
-
-    <!-- Set this to true to create a stable release version -->
-    <StableVersion>false</StableVersion>
-
-    <!-- Example CI/preview build version: 1.2.4-preview.202X.12.19 -->
-    <!-- Example stable release version: 1.2.4 (pass -p:StableVersion=true) -->
-    <PackageVersion Condition="'$(StableVersion)' == 'true'">
-      $(MajorVersion).$(MinorVersion).$(PatchVersion)
-    </PackageVersion>
-    <PackageVersion Condition="'$(StableVersion)' != 'true'">
-      $(MajorVersion).$(MinorVersion).$(PatchVersion)-$(PreReleaseVersionLabel).$(BuildDate)
-    </PackageVersion>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
 
   <PropertyGroup Label="Licensing">
@@ -92,6 +66,7 @@
          This direct reference overrides version 4.8.5 to fix CVE-2024-0056 (GHSA-98g6-xh36-x2p7),
          a high-severity vulnerability allowing encryption bypass on SQL Server connections. -->
     <PackageReference Include="System.Data.SqlClient" />
+    <PackageReference Include="MinVer" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

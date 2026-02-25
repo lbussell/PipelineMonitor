@@ -33,43 +33,45 @@ Run the setup script to configure GitHub and NuGet.org for trusted publishing:
 dotnet run scripts/SetupPublishing.cs
 ```
 
-### Updating Package Version Numbers
+### How Versioning Works
 
-Version numbers are controlled in
-[`AzurePipelinesTool.csproj`](../../src/AzurePipelinesTool/AzurePipelinesTool.csproj). This template
-starts with the version number `0.1.0`. I recommend that you follow [Semantic
-Versioning](https://semver.org/). In practice, that means doing the following:
+This project uses [MinVer](https://github.com/adamralph/minver) for automatic
+versioning from git tags. Versions follow [Semantic
+Versioning](https://semver.org/).
 
-- Increment `<PatchVersion>` property whenever you make backwards-compatible
-  bug fixes.
-- Increment `<MinorVersion>` property whenever you add new features.
-- Increment `<MajorVersion>` property whenever you make breaking changes.
+- **Tagged commits** get the exact version from the tag (e.g. tag `v1.0.0` →
+  version `1.0.0`)
+- **Untagged commits** automatically get a pre-release version with height
+  (e.g. `1.0.1-alpha.0.5` means 5 commits after `v1.0.0`)
 
-### Publishing a Pre-Release Package
-
-Pre-release packages are useful for testing and early access. They include a
-version suffix like `-preview.yyyy.MM.dd`.
-
-1. Go to the **Actions** tab in your GitHub repository
-2. Select the **Publish NuGet Package** workflow
-3. Click **Run workflow**
-4. Leave **"Publish as a stable version"** **unchecked** (default)
-
-The package will be published with a version like `0.1.0-preview.2025.12.21`.
+No manual version editing is needed in `.csproj` files.
 
 ### Publishing a Stable Release
 
-Stable releases have no pre-release suffix (e.g., `0.1.0`, `1.2.4`,
-`99.99.99`).
+Use the release script to create and push a release tag:
 
-1. **Update the version numbers** (see section below)
-2. Commit and push your changes
-3. Go to the **Actions** tab in your GitHub repository
-4. Select the **Publish NuGet Package** workflow
-5. Click **Run workflow**
-6. **Check** the **"Publish as a stable version"** checkbox
-7. Click **Run workflow**
+```bash
+dotnet run scripts/Release.cs 1.0.0
+```
 
-The package will be published with a stable version. You will then want to bump
-the major/minor/patch version so that you can start working on the next
-release.
+The script:
+
+1. Validates the version and checks for a clean working tree
+2. Creates a `v1.0.0` git tag on the current commit
+3. Pushes the tag to origin
+4. The **Publish NuGet Package** workflow triggers automatically
+
+After the release, remember to update the version in
+`.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
+
+### Publishing a Pre-Release
+
+Tag the commit with a pre-release version:
+
+```bash
+git tag v1.0.0-rc.1
+git push --tags
+```
+
+The **Publish NuGet Package** workflow triggers automatically when the tag is
+pushed.

@@ -1,12 +1,8 @@
 name: Publish NuGet Package
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
-    inputs:
-      stable-version:
-        description: 'Publish as a stable version (no prerelease suffix)'
-        type: boolean
-        required: true
-        default: false
 
 # Deny all permissions by default
 permissions: {}
@@ -14,8 +10,6 @@ permissions: {}
 jobs:
   build:
     uses: ./.github/workflows/build.yml
-    with:
-      stable-version: ${{ inputs.stable-version }}
     permissions:
       contents: read
 
