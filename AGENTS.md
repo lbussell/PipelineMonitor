@@ -39,7 +39,7 @@ dotnet run --project src/AzurePipelinesTool -- <command> [args]
 
 **Configuration**: XDG-compliant config stored at `~/.config/AzurePipelinesTool/config.json`. Build settings shared via `src/Directory.Build.props` and `src/Directory.Packages.props` (central package management).
 
-**Versioning**: The version is defined in `src/AzurePipelinesTool/AzurePipelinesTool.csproj` (`MajorVersion`, `MinorVersion`, `PatchVersion`). Follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). When updating the version, also update `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` to match.
+**Versioning**: Uses [MinVer](https://github.com/adamralph/minver) for automatic versioning from git tags. Tag a commit with `v{major}.{minor}.{patch}` (e.g. `v1.0.0`) and MinVer sets the package version automatically. Use the release script `dotnet run scripts/Release.cs <version>` to create releases — it updates `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`, commits, and tags.
 
 ## Tests
 
