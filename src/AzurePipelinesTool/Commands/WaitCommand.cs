@@ -30,10 +30,12 @@ internal sealed class WaitCommand(
     /// </summary>
     /// <param name="buildIdOrUrl">Build ID or Azure DevOps build results URL.</param>
     /// <param name="failOnError">-f, Exit with non-zero code if the pipeline fails or is canceled.</param>
+    /// <param name="quiet">-q, Suppress the terminal bell when the wait completes.</param>
     [Command("wait")]
     public async Task ExecuteAsync(
         [Argument] string buildIdOrUrl,
         bool failOnError = false,
+        bool quiet = false,
         CancellationToken cancellationToken = default
     )
     {
@@ -54,6 +56,9 @@ internal sealed class WaitCommand(
             if (isComplete)
             {
                 DisplayFinalSummary(timeline, summary.PipelineName, buildId, stopwatch.Elapsed);
+
+                if (!quiet)
+                    _ansiConsole.Write("\a");
 
                 if (failOnError && HasFailure(timeline))
                     Environment.ExitCode = 1;
