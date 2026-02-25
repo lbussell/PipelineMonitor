@@ -16,6 +16,10 @@ using CliWrap.Buffered;
 using Spectre.Console;
 
 var git = new CliWrapper("git");
+var gh = new CliWrapper("gh");
+
+Prompt.Info("Checking GitHub CLI authentication...");
+await gh.RunAsync("auth status");
 
 // List existing tags for context
 var existingTags = await git.RunAsync("tag --list --sort=-v:refname");
@@ -58,6 +62,11 @@ Prompt.Success($"Created tag [green]{Markup.Escape(tag)}[/]");
 
 await git.RunWithConfirmationAsync($"push origin {tag}");
 Prompt.Success($"Pushed tag [green]{Markup.Escape(tag)}[/] — publish workflow will trigger automatically.");
+
+var isPreRelease = version.Contains('-');
+var prereleaseFlag = isPreRelease ? " --prerelease" : "";
+await gh.RunWithConfirmationAsync($"release create {tag} --generate-notes{prereleaseFlag}");
+Prompt.Success($"Created GitHub Release [green]{Markup.Escape(tag)}[/]");
 
 AnsiConsole.WriteLine();
 Prompt.Warning($"Remember to update the version in [blue].claude-plugin/plugin.json[/] and [blue].claude-plugin/marketplace.json[/] to [green]{Markup.Escape(version)}[/].");
