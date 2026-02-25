@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using AzurePipelinesTool.AzureDevOps;
 using AzurePipelinesTool.Display;
+using AzurePipelinesTool.Hooks;
 using ConsoleAppFramework;
 using Spectre.Console;
 
@@ -13,7 +14,8 @@ internal sealed class WaitCommand(
     IAnsiConsole ansiConsole,
     InteractionService interactionService,
     PipelinesService pipelinesService,
-    BuildIdResolver buildIdResolver
+    BuildIdResolver buildIdResolver,
+    HookService hookService
 )
 {
     private const int InitialIntervalSeconds = 5;
@@ -24,6 +26,7 @@ internal sealed class WaitCommand(
     private readonly InteractionService _interactionService = interactionService;
     private readonly PipelinesService _pipelinesService = pipelinesService;
     private readonly BuildIdResolver _buildIdResolver = buildIdResolver;
+    private readonly HookService _hookService = hookService;
 
     /// <summary>
     /// Wait for a pipeline run to complete.
@@ -60,8 +63,27 @@ internal sealed class WaitCommand(
                 if (!quiet)
                     _ansiConsole.Write("\a");
 
-                if (failOnError && HasFailure(timeline))
+                var failed = HasFailure(timeline);
+                if (failOnError && failed)
                     Environment.ExitCode = 1;
+
+                var hookContext = new HookContext(
+                    Org: org.Name,
+                    Project: project.Name,
+                    PipelineId: summary.PipelineId,
+                    PipelineName: summary.PipelineName,
+                    Ref: summary.SourceRef,
+                    BuildId: buildId,
+                    Parameters: [],
+                    Variables: []
+                );
+
+                await _hookService.RunPipelineCompleteHooksAsync(hookContext, cancellationToken);
+
+                if (failed)
+                    await _hookService.RunPipelineFailHooksAsync(hookContext, cancellationToken);
+                else
+                    await _hookService.RunPipelineSuccessHooksAsync(hookContext, cancellationToken);
 
                 return;
             }

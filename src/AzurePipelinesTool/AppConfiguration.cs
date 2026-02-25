@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
+using AzurePipelinesTool.Hooks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -31,6 +32,9 @@ internal static class XdgConfigurationExtensions
 
         var configSection = builder.Configuration.GetSection("settings");
         builder.Services.Configure<AppConfiguration>(configSection);
+
+        var hooksSection = builder.Configuration.GetSection("hooks");
+        builder.Services.Configure<HooksConfig>(hooksSection);
 
         return builder;
     }

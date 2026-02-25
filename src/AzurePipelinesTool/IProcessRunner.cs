@@ -22,6 +22,23 @@ internal interface IProcessRunner
         bool allowNonZeroExitCode = false,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    /// Executes a command with array-style arguments and optional stdin input.
+    /// </summary>
+    /// <param name="executable">The executable to run.</param>
+    /// <param name="arguments">The arguments to pass to the executable (each element is a separate argument).</param>
+    /// <param name="stdinInput">Optional text to write to the process's standard input.</param>
+    /// <param name="allowNonZeroExitCode">Whether to allow non-zero exit codes without throwing. Defaults to false (throws on non-zero).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A result containing exit code and output.</returns>
+    Task<ProcessResult> ExecuteAsync(
+        string executable,
+        IReadOnlyList<string> arguments,
+        string? stdinInput = null,
+        bool allowNonZeroExitCode = false,
+        CancellationToken cancellationToken = default
+    );
 }
 
 /// <summary>
