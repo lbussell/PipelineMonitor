@@ -37,7 +37,6 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 new SpinnerColumn(),
                 new TaskDescriptionColumn(),
                 new ProgressBarColumn(),
-                new PercentageColumn(),
                 new ElapsedTimeColumn())
             .StartAsync(async ctx =>
             {
@@ -72,38 +71,51 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
     {
         foreach (var stage in timeline.Stages)
         {
+            var completedJobs = stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
+            var totalJobCount = stage.Jobs.Count;
+            var escapedName = stage.Name.EscapeMarkup();
+
             if (!tasksByStage.TryGetValue(stage.Name, out var progressTask))
             {
-                var totalJobs = Math.Max(stage.Jobs.Count, 1);
-                progressTask = ctx.AddTask(stage.Name.EscapeMarkup(), maxValue: totalJobs);
+                var maxValue = Math.Max(totalJobCount, 1);
+                progressTask = ctx.AddTask(FormatDescription(escapedName, completedJobs, totalJobCount), autoStart: false, maxValue: maxValue);
                 progressTask.IsIndeterminate = stage.State == TimelineRecordStatus.Pending;
                 tasksByStage[stage.Name] = progressTask;
             }
 
-            var maxValue = Math.Max(stage.Jobs.Count, 1);
-            progressTask.MaxValue = maxValue;
+            progressTask.MaxValue = Math.Max(totalJobCount, 1);
 
             switch (stage.State)
             {
                 case TimelineRecordStatus.Pending:
                     progressTask.IsIndeterminate = true;
+                    progressTask.Description = FormatDescription(escapedName, completedJobs, totalJobCount);
                     break;
 
                 case TimelineRecordStatus.InProgress:
                     progressTask.IsIndeterminate = false;
-                    var completedJobs = stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
+                    if (!progressTask.IsStarted)
+                        progressTask.StartTask();
                     progressTask.Value = completedJobs;
+                    progressTask.Description = FormatDescription(escapedName, completedJobs, totalJobCount);
                     break;
 
                 case TimelineRecordStatus.Completed:
                     progressTask.IsIndeterminate = false;
-                    progressTask.Value = maxValue;
-                    var statusLabel = TimelineFormatter.GetStatusLabel(stage.State, stage.Result).EscapeMarkup();
-                    progressTask.Description = $"{statusLabel} {stage.Name.EscapeMarkup()}";
+                    if (!progressTask.IsStarted)
+                        progressTask.StartTask();
+                    progressTask.Value = progressTask.MaxValue;
+                    var isFailure = stage.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled;
+                    var stageLabel = isFailure ? $"[red]{escapedName}[/]" : escapedName;
+                    progressTask.Description = FormatDescription(stageLabel, completedJobs, totalJobCount);
+                    progressTask.StopTask();
                     break;
             }
         }
     }
+
+    private static string FormatDescription(string stageLabel, int completedJobs, int totalJobs) =>
+        $"{stageLabel} [dim]{completedJobs}/{totalJobs}[/]";
 
     private static bool HasFailure(BuildTimelineInfo timeline) =>
         timeline.Stages.Any(s => s.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled);
