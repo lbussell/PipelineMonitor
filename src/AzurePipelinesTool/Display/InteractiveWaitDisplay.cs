@@ -93,14 +93,6 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
             {
                 var maxValue = Math.Max(total, 1);
                 progressTask = ctx.AddTask(FormatDescription(escapedName, completed, total), autoStart: false, maxValue: maxValue);
-
-                var initialJobStart = GetEarliestJobStartTime(stage);
-                if (initialJobStart.HasValue)
-                {
-                    elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - initialJobStart.Value.ToUniversalTime());
-                    progressTask.StartTask();
-                }
-
                 tasksByStage[stage.Name] = progressTask;
             }
 

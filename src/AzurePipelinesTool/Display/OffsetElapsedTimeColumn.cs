@@ -27,7 +27,15 @@ internal sealed class OffsetElapsedTimeColumn : ProgressColumn
     {
         _offsets.TryGetValue(task.Id, out var offset);
 
-        // For stopped tasks, the offset holds the exact duration (start→finish).
+        // For finished tasks, the offset holds the exact duration — don't use ElapsedTime
+        // because the Spectre.Console stopwatch may not be fully frozen after StopTask().
+        if (task.IsFinished)
+        {
+            return offset == TimeSpan.Zero
+                ? new Markup("--:--:--")
+                : new Text($"{offset:hh\\:mm\\:ss}", Style);
+        }
+
         // For running tasks, offset is the head start and ElapsedTime adds the live portion.
         var elapsed = task.ElapsedTime;
         var total = elapsed is null && offset == TimeSpan.Zero
