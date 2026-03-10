@@ -47,7 +47,9 @@ internal sealed record BuildTimelineInfo(ImmutableList<TimelineStageInfo> Stages
             Result: ToResult(stage.Result),
             Order: stage.Order,
             LogId: stage.Log?.Id,
-            Jobs: jobs
+            Jobs: jobs,
+            StartTime: stage.StartTime,
+            FinishTime: stage.FinishTime
         );
     }
 
@@ -60,7 +62,9 @@ internal sealed record BuildTimelineInfo(ImmutableList<TimelineStageInfo> Stages
                 State: ToState(task.State),
                 Result: ToResult(task.Result),
                 Order: task.Order,
-                LogId: task.Log?.Id
+                LogId: task.Log?.Id,
+                StartTime: task.StartTime,
+                FinishTime: task.FinishTime
             ))
             .ToImmutableList();
 
@@ -70,7 +74,9 @@ internal sealed record BuildTimelineInfo(ImmutableList<TimelineStageInfo> Stages
             Result: ToResult(job.Result),
             Order: job.Order,
             LogId: job.Log?.Id,
-            Tasks: tasks
+            Tasks: tasks,
+            StartTime: job.StartTime,
+            FinishTime: job.FinishTime
         );
     }
 
@@ -134,7 +140,9 @@ internal sealed record TimelineStageInfo(
     PipelineRunResult Result,
     int? Order,
     int? LogId,
-    ImmutableList<TimelineJobInfo> Jobs
+    ImmutableList<TimelineJobInfo> Jobs,
+    DateTime? StartTime = null,
+    DateTime? FinishTime = null
 );
 
 internal sealed record TimelineJobInfo(
@@ -143,7 +151,9 @@ internal sealed record TimelineJobInfo(
     PipelineRunResult Result,
     int? Order,
     int? LogId,
-    ImmutableList<TimelineTaskInfo> Tasks
+    ImmutableList<TimelineTaskInfo> Tasks,
+    DateTime? StartTime = null,
+    DateTime? FinishTime = null
 );
 
 internal sealed record TimelineTaskInfo(
@@ -151,5 +161,7 @@ internal sealed record TimelineTaskInfo(
     TimelineRecordStatus State,
     PipelineRunResult Result,
     int? Order,
-    int? LogId
+    int? LogId,
+    DateTime? StartTime = null,
+    DateTime? FinishTime = null
 );

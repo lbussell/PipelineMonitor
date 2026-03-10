@@ -29,11 +29,13 @@ internal sealed class WaitCommand(
     /// Wait for a pipeline run to complete.
     /// </summary>
     /// <param name="buildIdOrUrl">Build ID or Azure DevOps build results URL.</param>
+    /// <param name="interactive">-i, Use interactive progress bars to display pipeline status.</param>
     /// <param name="failOnError">-f, Exit with non-zero code if the pipeline fails or is canceled.</param>
     /// <param name="quiet">-q, Suppress the terminal bell when the wait completes.</param>
-    [Command("wait")]
+    [Command("wait|watch")]
     public async Task ExecuteAsync(
         [Argument] string buildIdOrUrl,
+        bool interactive = false,
         bool failOnError = false,
         bool quiet = false,
         CancellationToken cancellationToken = default
@@ -42,6 +44,26 @@ internal sealed class WaitCommand(
         var (org, project, buildId) = await _buildIdResolver.ResolveAsync(buildIdOrUrl);
         var summary = await _pipelinesService.GetBuildSummaryAsync(org, project, buildId, cancellationToken);
 
+        if (interactive)
+        {
+            var display = new InteractiveWaitDisplay(_ansiConsole);
+            await display.RunAsync(_pipelinesService, org, project, buildId, summary.PipelineName, quiet, failOnError, cancellationToken);
+        }
+        else
+        {
+            await RunStandardAsync(org, project, buildId, summary.PipelineName, quiet, failOnError, cancellationToken);
+        }
+    }
+
+    private async Task RunStandardAsync(
+        OrganizationInfo org,
+        ProjectInfo project,
+        int buildId,
+        string pipelineName,
+        bool quiet,
+        bool failOnError,
+        CancellationToken cancellationToken)
+    {
         _ansiConsole.WriteLine($"Waiting for pipeline run {buildId}...");
         _ansiConsole.WriteLine();
 
@@ -55,7 +77,7 @@ internal sealed class WaitCommand(
 
             if (isComplete)
             {
-                DisplayFinalSummary(timeline, summary.PipelineName, buildId, stopwatch.Elapsed);
+                DisplayFinalSummary(timeline, pipelineName, buildId, stopwatch.Elapsed);
 
                 if (!quiet)
                     _ansiConsole.Write("\a");
