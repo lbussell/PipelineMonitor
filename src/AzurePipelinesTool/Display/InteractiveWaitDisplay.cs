@@ -79,12 +79,22 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
         {
             var completedJobs = stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
             var totalJobCount = stage.Jobs.Count;
+
+            // For single-job stages with tasks available, track individual task progress
+            // instead of the binary 0/1 job-level progress.
+            var singleJob = totalJobCount == 1 && stage.Jobs[0].Tasks.Count > 0 ? stage.Jobs[0] : null;
+            var completed = singleJob is not null
+                ? singleJob.Tasks.Count(t => t.State == TimelineRecordStatus.Completed)
+                : completedJobs;
+            var total = singleJob is not null
+                ? singleJob.Tasks.Count
+                : totalJobCount;
             var escapedName = stage.Name.EscapeMarkup();
 
             if (!tasksByStage.TryGetValue(stage.Name, out var progressTask))
             {
-                var maxValue = Math.Max(totalJobCount, 1);
-                progressTask = ctx.AddTask(FormatDescription(escapedName, completedJobs, totalJobCount), autoStart: false, maxValue: maxValue);
+                var maxValue = Math.Max(total, 1);
+                progressTask = ctx.AddTask(FormatDescription(escapedName, completed, total), autoStart: false, maxValue: maxValue);
 
                 var initialJobStart = GetEarliestJobStartTime(stage);
                 if (initialJobStart.HasValue)
@@ -96,12 +106,12 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 tasksByStage[stage.Name] = progressTask;
             }
 
-            progressTask.MaxValue = Math.Max(totalJobCount, 1);
+            progressTask.MaxValue = Math.Max(total, 1);
 
             switch (stage.State)
             {
                 case TimelineRecordStatus.Pending:
-                    progressTask.Description = FormatDescription(escapedName, completedJobs, totalJobCount);
+                    progressTask.Description = FormatDescription(escapedName, completed, total);
                     break;
 
                 case TimelineRecordStatus.InProgress:
@@ -115,8 +125,8 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                             progressTask.StartTask();
                         }
                     }
-                    progressTask.Value = completedJobs;
-                    progressTask.Description = FormatDescription(escapedName, completedJobs, totalJobCount);
+                    progressTask.Value = completed;
+                    progressTask.Description = FormatDescription(escapedName, completed, total);
                     break;
 
                 case TimelineRecordStatus.Completed:
@@ -131,7 +141,7 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                     progressTask.Value = progressTask.MaxValue;
                     var isFailure = stage.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled;
                     var stageLabel = isFailure ? $"[red]{escapedName}[/]" : escapedName;
-                    progressTask.Description = FormatDescription(stageLabel, completedJobs, totalJobCount);
+                    progressTask.Description = FormatDescription(stageLabel, completed, total);
                     // For completed stages, override the offset to show exact execution duration
                     var effectiveStart = completedJobStart ?? stage.StartTime;
                     if (effectiveStart.HasValue && stage.FinishTime.HasValue)
@@ -142,8 +152,8 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
         }
     }
 
-    private static string FormatDescription(string stageLabel, int completedJobs, int totalJobs) =>
-        $"{stageLabel} [dim]{completedJobs}/{totalJobs}[/]";
+    private static string FormatDescription(string stageLabel, int completed, int total) =>
+        $"{stageLabel} [dim]{completed}/{total}[/]";
 
     /// <summary>
     /// Returns the earliest <see cref="TimelineJobInfo.StartTime"/> among a stage's jobs,
