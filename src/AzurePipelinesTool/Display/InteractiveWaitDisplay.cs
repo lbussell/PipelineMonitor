@@ -33,13 +33,15 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
 
         BuildTimelineInfo? finalTimeline = null;
         var elapsedColumn = new OffsetElapsedTimeColumn();
+        var statusColumn = new StatusTextColumn();
 
         await _ansiConsole.Progress()
             .Columns(
                 new SpinnerColumn(),
                 new TaskDescriptionColumn(),
                 new ProgressBarColumn(),
-                elapsedColumn)
+                elapsedColumn,
+                statusColumn)
             .StartAsync(async ctx =>
             {
                 Dictionary<string, ProgressTask> tasksByStage = [];
@@ -47,7 +49,7 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 while (true)
                 {
                     var timeline = await pipelinesService.GetBuildTimelineAsync(org, project, buildId, cancellationToken);
-                    UpdateProgressTasks(ctx, elapsedColumn, tasksByStage, timeline);
+                    UpdateProgressTasks(ctx, elapsedColumn, statusColumn, tasksByStage, timeline);
 
                     if (timeline.Stages.All(s => s.State == TimelineRecordStatus.Completed))
                     {
@@ -72,75 +74,98 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
     private static void UpdateProgressTasks(
         ProgressContext ctx,
         OffsetElapsedTimeColumn elapsedColumn,
+        StatusTextColumn statusColumn,
         Dictionary<string, ProgressTask> tasksByStage,
         BuildTimelineInfo timeline)
     {
         foreach (var stage in timeline.Stages)
         {
-            var completedJobs = stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
-            var totalJobCount = stage.Jobs.Count;
+            var allTasks = stage.Jobs.SelectMany(j => j.Tasks).ToList();
+            var completed = allTasks.Count > 0
+                ? allTasks.Count(t => t.State == TimelineRecordStatus.Completed)
+                : stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
+            var total = allTasks.Count > 0
+                ? allTasks.Count
+                : stage.Jobs.Count;
             var escapedName = stage.Name.EscapeMarkup();
 
             if (!tasksByStage.TryGetValue(stage.Name, out var progressTask))
             {
-                var maxValue = Math.Max(totalJobCount, 1);
-                progressTask = ctx.AddTask(FormatDescription(escapedName, completedJobs, totalJobCount), autoStart: false, maxValue: maxValue);
-                progressTask.IsIndeterminate = stage.State == TimelineRecordStatus.Pending;
-
-                if (stage.StartTime.HasValue)
-                {
-                    // Offset the elapsed timer so it reflects actual pipeline duration
-                    elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - stage.StartTime.Value.ToUniversalTime());
-                    progressTask.StartTask();
-                }
-
+                var maxValue = Math.Max(total, 1);
+                progressTask = ctx.AddTask(FormatDescription(escapedName, completed, total), autoStart: false, maxValue: maxValue);
                 tasksByStage[stage.Name] = progressTask;
             }
 
-            progressTask.MaxValue = Math.Max(totalJobCount, 1);
+            progressTask.MaxValue = Math.Max(total, 1);
 
             switch (stage.State)
             {
                 case TimelineRecordStatus.Pending:
-                    progressTask.IsIndeterminate = true;
-                    progressTask.Description = FormatDescription(escapedName, completedJobs, totalJobCount);
+                    progressTask.Description = FormatDescription(escapedName, completed, total);
+                    statusColumn.SetStatus(progressTask, "[dim]Not started[/]");
                     break;
 
                 case TimelineRecordStatus.InProgress:
-                    progressTask.IsIndeterminate = false;
-                    if (!progressTask.IsStarted)
+                    var isWaitingForAgent = stage.Jobs.All(j => j.State == TimelineRecordStatus.Pending);
+                    progressTask.IsIndeterminate = isWaitingForAgent;
+                    if (!isWaitingForAgent && !progressTask.IsStarted)
                     {
-                        if (stage.StartTime.HasValue)
-                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - stage.StartTime.Value.ToUniversalTime());
-                        progressTask.StartTask();
+                        var earliestJobStart = GetEarliestJobStartTime(stage);
+                        if (earliestJobStart.HasValue)
+                        {
+                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - earliestJobStart.Value.ToUniversalTime());
+                            progressTask.StartTask();
+                        }
                     }
-                    progressTask.Value = completedJobs;
-                    progressTask.Description = FormatDescription(escapedName, completedJobs, totalJobCount);
+                    progressTask.Value = completed;
+                    progressTask.Description = FormatDescription(escapedName, completed, total);
+                    statusColumn.SetStatus(progressTask, isWaitingForAgent
+                        ? "[dim]Waiting for build agent[/]"
+                        : "[dim]Running...[/]");
                     break;
 
                 case TimelineRecordStatus.Completed:
                     progressTask.IsIndeterminate = false;
+                    var completedJobStart = GetEarliestJobStartTime(stage);
                     if (!progressTask.IsStarted)
                     {
-                        if (stage.StartTime.HasValue)
-                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - stage.StartTime.Value.ToUniversalTime());
+                        if (completedJobStart.HasValue)
+                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - completedJobStart.Value.ToUniversalTime());
                         progressTask.StartTask();
                     }
                     progressTask.Value = progressTask.MaxValue;
                     var isFailure = stage.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled;
                     var stageLabel = isFailure ? $"[red]{escapedName}[/]" : escapedName;
-                    progressTask.Description = FormatDescription(stageLabel, completedJobs, totalJobCount);
-                    // For completed stages, override the offset to show exact duration
-                    if (stage.StartTime.HasValue && stage.FinishTime.HasValue)
-                        elapsedColumn.SetOffset(progressTask, stage.FinishTime.Value - stage.StartTime.Value);
+                    progressTask.Description = FormatDescription(stageLabel, completed, total);
+                    // For completed stages, override the offset to show exact execution duration
+                    var effectiveStart = completedJobStart ?? stage.StartTime;
+                    if (effectiveStart.HasValue && stage.FinishTime.HasValue)
+                        elapsedColumn.SetOffset(progressTask, stage.FinishTime.Value - effectiveStart.Value);
+                    statusColumn.SetStatus(progressTask, GetCompletedStatusMarkup(stage.Result));
                     progressTask.StopTask();
                     break;
             }
         }
     }
 
-    private static string FormatDescription(string stageLabel, int completedJobs, int totalJobs) =>
-        $"{stageLabel} [dim]{completedJobs}/{totalJobs}[/]";
+    private static string FormatDescription(string stageLabel, int completed, int total) =>
+        $"{stageLabel} [dim]{completed}/{total}[/]";
+
+    /// <summary>
+    /// Returns the earliest <see cref="TimelineJobInfo.StartTime"/> among a stage's jobs,
+    /// or <c>null</c> if no job has started yet (e.g. still waiting for an agent).
+    /// </summary>
+    private static DateTime? GetEarliestJobStartTime(TimelineStageInfo stage) =>
+        stage.Jobs.Min(j => j.StartTime);
+
+    private static string GetCompletedStatusMarkup(PipelineRunResult result) => result switch
+    {
+        PipelineRunResult.Succeeded => "[dim]Succeeded[/]",
+        PipelineRunResult.PartiallySucceeded => "[dim]Succeeded with issues[/]",
+        PipelineRunResult.Failed => "[red]Failed[/]",
+        PipelineRunResult.Canceled => "[dim]Canceled[/]",
+        _ => "[dim]Completed[/]",
+    };
 
     private static bool HasFailure(BuildTimelineInfo timeline) =>
         timeline.Stages.Any(s => s.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled);
