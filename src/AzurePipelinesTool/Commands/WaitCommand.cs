@@ -32,7 +32,7 @@ internal sealed class WaitCommand(
     /// <param name="interactive">-i, Use interactive progress bars to display pipeline status.</param>
     /// <param name="failOnError">-f, Exit with non-zero code if the pipeline fails or is canceled.</param>
     /// <param name="quiet">-q, Suppress the terminal bell when the wait completes.</param>
-    [Command("wait")]
+    [Command("wait|watch")]
     public async Task ExecuteAsync(
         [Argument] string buildIdOrUrl,
         bool interactive = false,
