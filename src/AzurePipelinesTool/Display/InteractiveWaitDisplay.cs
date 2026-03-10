@@ -33,13 +33,15 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
 
         BuildTimelineInfo? finalTimeline = null;
         var elapsedColumn = new OffsetElapsedTimeColumn();
+        var statusColumn = new StatusTextColumn();
 
         await _ansiConsole.Progress()
             .Columns(
                 new SpinnerColumn(),
                 new TaskDescriptionColumn(),
                 new ProgressBarColumn(),
-                elapsedColumn)
+                elapsedColumn,
+                statusColumn)
             .StartAsync(async ctx =>
             {
                 Dictionary<string, ProgressTask> tasksByStage = [];
@@ -47,7 +49,7 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 while (true)
                 {
                     var timeline = await pipelinesService.GetBuildTimelineAsync(org, project, buildId, cancellationToken);
-                    UpdateProgressTasks(ctx, elapsedColumn, tasksByStage, timeline);
+                    UpdateProgressTasks(ctx, elapsedColumn, statusColumn, tasksByStage, timeline);
 
                     if (timeline.Stages.All(s => s.State == TimelineRecordStatus.Completed))
                     {
@@ -72,6 +74,7 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
     private static void UpdateProgressTasks(
         ProgressContext ctx,
         OffsetElapsedTimeColumn elapsedColumn,
+        StatusTextColumn statusColumn,
         Dictionary<string, ProgressTask> tasksByStage,
         BuildTimelineInfo timeline)
     {
@@ -112,6 +115,7 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
             {
                 case TimelineRecordStatus.Pending:
                     progressTask.Description = FormatDescription(escapedName, completed, total);
+                    statusColumn.SetStatus(progressTask, "[dim]Not started[/]");
                     break;
 
                 case TimelineRecordStatus.InProgress:
@@ -127,6 +131,10 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                     }
                     progressTask.Value = completed;
                     progressTask.Description = FormatDescription(escapedName, completed, total);
+                    var isWaitingForAgent = stage.Jobs.All(j => j.State == TimelineRecordStatus.Pending);
+                    statusColumn.SetStatus(progressTask, isWaitingForAgent
+                        ? "[dim]Waiting for build agent[/]"
+                        : "[dim]Running...[/]");
                     break;
 
                 case TimelineRecordStatus.Completed:
@@ -146,6 +154,7 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                     var effectiveStart = completedJobStart ?? stage.StartTime;
                     if (effectiveStart.HasValue && stage.FinishTime.HasValue)
                         elapsedColumn.SetOffset(progressTask, stage.FinishTime.Value - effectiveStart.Value);
+                    statusColumn.SetStatus(progressTask, GetCompletedStatusMarkup(stage.Result));
                     progressTask.StopTask();
                     break;
             }
@@ -161,6 +170,15 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
     /// </summary>
     private static DateTime? GetEarliestJobStartTime(TimelineStageInfo stage) =>
         stage.Jobs.Min(j => j.StartTime);
+
+    private static string GetCompletedStatusMarkup(PipelineRunResult result) => result switch
+    {
+        PipelineRunResult.Succeeded => "[dim]Succeeded[/]",
+        PipelineRunResult.PartiallySucceeded => "[dim]Succeeded with issues[/]",
+        PipelineRunResult.Failed => "[red]Failed[/]",
+        PipelineRunResult.Canceled => "[dim]Canceled[/]",
+        _ => "[dim]Completed[/]",
+    };
 
     private static bool HasFailure(BuildTimelineInfo timeline) =>
         timeline.Stages.Any(s => s.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled);
