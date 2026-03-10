@@ -85,7 +85,6 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
             {
                 var maxValue = Math.Max(totalJobCount, 1);
                 progressTask = ctx.AddTask(FormatDescription(escapedName, completedJobs, totalJobCount), autoStart: false, maxValue: maxValue);
-                progressTask.IsIndeterminate = stage.State == TimelineRecordStatus.Pending;
 
                 if (stage.StartTime.HasValue)
                 {
@@ -102,7 +101,6 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
             switch (stage.State)
             {
                 case TimelineRecordStatus.Pending:
-                    progressTask.IsIndeterminate = true;
                     progressTask.Description = FormatDescription(escapedName, completedJobs, totalJobCount);
                     break;
 
