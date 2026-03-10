@@ -86,10 +86,10 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 var maxValue = Math.Max(totalJobCount, 1);
                 progressTask = ctx.AddTask(FormatDescription(escapedName, completedJobs, totalJobCount), autoStart: false, maxValue: maxValue);
 
-                if (stage.StartTime.HasValue)
+                var initialJobStart = GetEarliestJobStartTime(stage);
+                if (initialJobStart.HasValue)
                 {
-                    // Offset the elapsed timer so it reflects actual pipeline duration
-                    elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - stage.StartTime.Value.ToUniversalTime());
+                    elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - initialJobStart.Value.ToUniversalTime());
                     progressTask.StartTask();
                 }
 
@@ -108,9 +108,12 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                     progressTask.IsIndeterminate = false;
                     if (!progressTask.IsStarted)
                     {
-                        if (stage.StartTime.HasValue)
-                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - stage.StartTime.Value.ToUniversalTime());
-                        progressTask.StartTask();
+                        var earliestJobStart = GetEarliestJobStartTime(stage);
+                        if (earliestJobStart.HasValue)
+                        {
+                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - earliestJobStart.Value.ToUniversalTime());
+                            progressTask.StartTask();
+                        }
                     }
                     progressTask.Value = completedJobs;
                     progressTask.Description = FormatDescription(escapedName, completedJobs, totalJobCount);
@@ -118,19 +121,21 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
 
                 case TimelineRecordStatus.Completed:
                     progressTask.IsIndeterminate = false;
+                    var completedJobStart = GetEarliestJobStartTime(stage);
                     if (!progressTask.IsStarted)
                     {
-                        if (stage.StartTime.HasValue)
-                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - stage.StartTime.Value.ToUniversalTime());
+                        if (completedJobStart.HasValue)
+                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - completedJobStart.Value.ToUniversalTime());
                         progressTask.StartTask();
                     }
                     progressTask.Value = progressTask.MaxValue;
                     var isFailure = stage.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled;
                     var stageLabel = isFailure ? $"[red]{escapedName}[/]" : escapedName;
                     progressTask.Description = FormatDescription(stageLabel, completedJobs, totalJobCount);
-                    // For completed stages, override the offset to show exact duration
-                    if (stage.StartTime.HasValue && stage.FinishTime.HasValue)
-                        elapsedColumn.SetOffset(progressTask, stage.FinishTime.Value - stage.StartTime.Value);
+                    // For completed stages, override the offset to show exact execution duration
+                    var effectiveStart = completedJobStart ?? stage.StartTime;
+                    if (effectiveStart.HasValue && stage.FinishTime.HasValue)
+                        elapsedColumn.SetOffset(progressTask, stage.FinishTime.Value - effectiveStart.Value);
                     progressTask.StopTask();
                     break;
             }
@@ -139,6 +144,13 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
 
     private static string FormatDescription(string stageLabel, int completedJobs, int totalJobs) =>
         $"{stageLabel} [dim]{completedJobs}/{totalJobs}[/]";
+
+    /// <summary>
+    /// Returns the earliest <see cref="TimelineJobInfo.StartTime"/> among a stage's jobs,
+    /// or <c>null</c> if no job has started yet (e.g. still waiting for an agent).
+    /// </summary>
+    private static DateTime? GetEarliestJobStartTime(TimelineStageInfo stage) =>
+        stage.Jobs.Min(j => j.StartTime);
 
     private static bool HasFailure(BuildTimelineInfo timeline) =>
         timeline.Stages.Any(s => s.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled);
