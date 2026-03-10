@@ -27,6 +27,7 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
         CancellationToken cancellationToken)
     {
         var url = BuildWebUrl(org.Name, project.Name, buildId);
+        SetConsoleTitle($"⏳ {pipelineName}");
         _ansiConsole.WriteLine();
         _ansiConsole.MarkupLine($"{pipelineName.EscapeMarkup()} ([blue][link={url}]View in browser[/][/])");
 
@@ -58,10 +59,13 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 }
             });
 
+        var hasFailure = finalTimeline is not null && HasFailure(finalTimeline);
+        SetConsoleTitle($"{(hasFailure ? "❌" : "✅")} {pipelineName}");
+
         if (!quiet)
             _ansiConsole.Write("\a");
 
-        if (failOnError && finalTimeline is not null && HasFailure(finalTimeline))
+        if (failOnError && hasFailure)
             Environment.ExitCode = 1;
     }
 
@@ -143,4 +147,10 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
 
     internal static string BuildWebUrl(string orgName, string projectName, int buildId) =>
         $"https://dev.azure.com/{Uri.EscapeDataString(orgName)}/{Uri.EscapeDataString(projectName)}/_build/results?buildId={buildId}";
+
+    /// <summary>
+    /// Sets the terminal window title using the OSC escape sequence.
+    /// </summary>
+    private static void SetConsoleTitle(string title) =>
+        Console.Write($"\x1b]0;{title}\x07");
 }
