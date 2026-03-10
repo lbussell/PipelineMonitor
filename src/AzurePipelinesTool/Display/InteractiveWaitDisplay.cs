@@ -31,13 +31,14 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
         _ansiConsole.WriteLine();
 
         BuildTimelineInfo? finalTimeline = null;
+        var elapsedColumn = new OffsetElapsedTimeColumn();
 
         await _ansiConsole.Progress()
             .Columns(
                 new SpinnerColumn(),
                 new TaskDescriptionColumn(),
                 new ProgressBarColumn(),
-                new ElapsedTimeColumn())
+                elapsedColumn)
             .StartAsync(async ctx =>
             {
                 Dictionary<string, ProgressTask> tasksByStage = [];
@@ -45,7 +46,7 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 while (true)
                 {
                     var timeline = await pipelinesService.GetBuildTimelineAsync(org, project, buildId, cancellationToken);
-                    UpdateProgressTasks(ctx, tasksByStage, timeline);
+                    UpdateProgressTasks(ctx, elapsedColumn, tasksByStage, timeline);
 
                     if (timeline.Stages.All(s => s.State == TimelineRecordStatus.Completed))
                     {
@@ -66,6 +67,7 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
 
     private static void UpdateProgressTasks(
         ProgressContext ctx,
+        OffsetElapsedTimeColumn elapsedColumn,
         Dictionary<string, ProgressTask> tasksByStage,
         BuildTimelineInfo timeline)
     {
@@ -80,6 +82,14 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 var maxValue = Math.Max(totalJobCount, 1);
                 progressTask = ctx.AddTask(FormatDescription(escapedName, completedJobs, totalJobCount), autoStart: false, maxValue: maxValue);
                 progressTask.IsIndeterminate = stage.State == TimelineRecordStatus.Pending;
+
+                if (stage.StartTime.HasValue)
+                {
+                    // Offset the elapsed timer so it reflects actual pipeline duration
+                    elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - stage.StartTime.Value.ToUniversalTime());
+                    progressTask.StartTask();
+                }
+
                 tasksByStage[stage.Name] = progressTask;
             }
 
@@ -95,7 +105,11 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 case TimelineRecordStatus.InProgress:
                     progressTask.IsIndeterminate = false;
                     if (!progressTask.IsStarted)
+                    {
+                        if (stage.StartTime.HasValue)
+                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - stage.StartTime.Value.ToUniversalTime());
                         progressTask.StartTask();
+                    }
                     progressTask.Value = completedJobs;
                     progressTask.Description = FormatDescription(escapedName, completedJobs, totalJobCount);
                     break;
@@ -103,11 +117,18 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                 case TimelineRecordStatus.Completed:
                     progressTask.IsIndeterminate = false;
                     if (!progressTask.IsStarted)
+                    {
+                        if (stage.StartTime.HasValue)
+                            elapsedColumn.SetOffset(progressTask, DateTime.UtcNow - stage.StartTime.Value.ToUniversalTime());
                         progressTask.StartTask();
+                    }
                     progressTask.Value = progressTask.MaxValue;
                     var isFailure = stage.Result is PipelineRunResult.Failed or PipelineRunResult.Canceled;
                     var stageLabel = isFailure ? $"[red]{escapedName}[/]" : escapedName;
                     progressTask.Description = FormatDescription(stageLabel, completedJobs, totalJobCount);
+                    // For completed stages, override the offset to show exact duration
+                    if (stage.StartTime.HasValue && stage.FinishTime.HasValue)
+                        elapsedColumn.SetOffset(progressTask, stage.FinishTime.Value - stage.StartTime.Value);
                     progressTask.StopTask();
                     break;
             }
