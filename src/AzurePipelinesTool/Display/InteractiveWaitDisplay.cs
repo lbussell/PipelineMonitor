@@ -27,8 +27,8 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
         CancellationToken cancellationToken)
     {
         var url = BuildWebUrl(org.Name, project.Name, buildId);
-        _ansiConsole.MarkupLine($"{pipelineName.EscapeMarkup()} [blue][link={url}]View in browser[/][/]");
         _ansiConsole.WriteLine();
+        _ansiConsole.MarkupLine($"{pipelineName.EscapeMarkup()} ([blue][link={url}]View in browser[/][/])");
 
         BuildTimelineInfo? finalTimeline = null;
         var elapsedColumn = new OffsetElapsedTimeColumn();
