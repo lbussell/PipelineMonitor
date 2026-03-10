@@ -80,18 +80,13 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
     {
         foreach (var stage in timeline.Stages)
         {
-            var completedJobs = stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
-            var totalJobCount = stage.Jobs.Count;
-
-            // For single-job stages with tasks available, track individual task progress
-            // instead of the binary 0/1 job-level progress.
-            var singleJob = totalJobCount == 1 && stage.Jobs[0].Tasks.Count > 0 ? stage.Jobs[0] : null;
-            var completed = singleJob is not null
-                ? singleJob.Tasks.Count(t => t.State == TimelineRecordStatus.Completed)
-                : completedJobs;
-            var total = singleJob is not null
-                ? singleJob.Tasks.Count
-                : totalJobCount;
+            var allTasks = stage.Jobs.SelectMany(j => j.Tasks).ToList();
+            var completed = allTasks.Count > 0
+                ? allTasks.Count(t => t.State == TimelineRecordStatus.Completed)
+                : stage.Jobs.Count(j => j.State == TimelineRecordStatus.Completed);
+            var total = allTasks.Count > 0
+                ? allTasks.Count
+                : stage.Jobs.Count;
             var escapedName = stage.Name.EscapeMarkup();
 
             if (!tasksByStage.TryGetValue(stage.Name, out var progressTask))
