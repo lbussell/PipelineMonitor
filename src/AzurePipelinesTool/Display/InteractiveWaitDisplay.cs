@@ -114,8 +114,9 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                     break;
 
                 case TimelineRecordStatus.InProgress:
-                    progressTask.IsIndeterminate = false;
-                    if (!progressTask.IsStarted)
+                    var isWaitingForAgent = stage.Jobs.All(j => j.State == TimelineRecordStatus.Pending);
+                    progressTask.IsIndeterminate = isWaitingForAgent;
+                    if (!isWaitingForAgent && !progressTask.IsStarted)
                     {
                         var earliestJobStart = GetEarliestJobStartTime(stage);
                         if (earliestJobStart.HasValue)
@@ -126,7 +127,6 @@ internal sealed class InteractiveWaitDisplay(IAnsiConsole ansiConsole)
                     }
                     progressTask.Value = completed;
                     progressTask.Description = FormatDescription(escapedName, completed, total);
-                    var isWaitingForAgent = stage.Jobs.All(j => j.State == TimelineRecordStatus.Pending);
                     statusColumn.SetStatus(progressTask, isWaitingForAgent
                         ? "[dim]Waiting for build agent[/]"
                         : "[dim]Running...[/]");
