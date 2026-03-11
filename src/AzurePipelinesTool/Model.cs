@@ -57,4 +57,4 @@ internal sealed record PipelineVariableInfo(string Name, string Value, bool IsSe
 
 internal sealed record QueuedPipelineRunInfo(RunId Id, string Name, string WebUrl);
 
-internal sealed record BuildSummaryInfo(string PipelineName);
+internal sealed record BuildSummaryInfo(string PipelineName, int PipelineId, string? SourceRef);

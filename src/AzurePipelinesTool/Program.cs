@@ -9,6 +9,7 @@ using AzurePipelinesTool.Commands;
 using AzurePipelinesTool.Display;
 using AzurePipelinesTool.Filters;
 using AzurePipelinesTool.Git;
+using AzurePipelinesTool.Hooks;
 using AzurePipelinesTool.Logging;
 using ConsoleAppFramework;
 using Microsoft.Extensions.Configuration;
@@ -38,6 +39,7 @@ builder.Services.TryAddSingleton<InteractionService>();
 builder.Services.TryAddSingleton<PipelineYamlService>();
 builder.Services.TryAddSingleton<PipelineResolver>();
 builder.Services.TryAddSingleton<BuildIdResolver>();
+builder.Services.TryAddSingleton<HookService>();
 
 // Add file logging
 builder.Logging.ClearProviders();
